@@ -1,0 +1,10 @@
+Transform: 'AWS::Serverless-2016-10-31'
+Resources:
+  AlexaVestibuleGateway:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: alexa-gateway/
+      Handler: dist/handler.handler
+      Runtime: nodejs10.x
+      Description: 'Vestibule Alexa Gateway'
+      Timeout: 50
