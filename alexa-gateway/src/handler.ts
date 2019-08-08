@@ -1,11 +1,9 @@
-import { Directive, Event } from '@vestibule-link/alexa-video-skill-types'
-import { Handler, Context, Callback } from 'aws-lambda';
+import { Directive, Event } from '@vestibule-link/alexa-video-skill-types';
+import { DirectiveErrorResponse, DirectiveResponse, SubType } from '@vestibule-link/iot-types';
+import { Callback, Context, Handler } from 'aws-lambda';
 import { getSub } from './authentication';
-import { getShadow, ensureDeviceActive } from './iot';
-import { findDirectiveHandler, DirectiveMessage } from './handlers';
-import { SubType, DirectiveResponse, DirectiveErrorResponse } from '@vestibule-link/iot-types';
+import { DirectiveMessage, findDirectiveHandler } from './handlers';
 
-const SHADOW_PREFIX = 'vestibule-bridge-'
 const logger = console.debug;
 
 async function directiveHandler(directive: Directive.Message, context: Context, callback: Callback<any>): Promise<Event.Message> {
@@ -19,11 +17,8 @@ async function directiveHandler(directive: Directive.Message, context: Context, 
     const directiveMessage = toDirectiveMessage(directive);
     try {
         const scope = messageHandler.getScope(directiveMessage);
-        const userInfo = await getSub(scope);
-        const clientId = SHADOW_PREFIX + userInfo;
-        const shadow = await getShadow(clientId);
-        ensureDeviceActive(shadow);
-        response = await messageHandler.getResponse(directiveMessage, messageId, clientId, shadow);
+        const userSub = await getSub(scope);
+        response = await messageHandler.getResponse(directiveMessage, messageId, userSub);
     } catch (err) {
         console.log(err);
         response = messageHandler.getError(err, directiveMessage, messageId);
@@ -60,4 +55,4 @@ function toDirectiveMessage<NS extends Directive.Namespaces>(message: Directive.
         ...directive
     }
 }
-export const handler: Handler<any,Event.Message> = directiveHandler;
+export const handler: Handler<any, Event.Message> = directiveHandler;

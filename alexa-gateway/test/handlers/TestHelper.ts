@@ -6,6 +6,7 @@ import { localEndpoint, messageId, vestibuleClientId } from "../mock/IotDataMock
 import { handler } from '../../src/handler';
 import { fakeCallback, FakeContext } from '../mock/LambdaMock';
 import { directiveMocks, mockEndpointState } from '../mock/DirectiveMocks';
+import { SSM } from 'aws-sdk';
 
 interface SharedStates {
     playback: {
@@ -102,7 +103,7 @@ export function verifyErrorResponse(event: Event.Message, errorHolder: ErrorHold
         .to.have.property('endpointId', generateEndpointId(localEndpoint) + endpointSuffix)
 }
 
-export function verifyVideoErrorResponse(event: Event.Message, errorHolder: ErrorHolder, endpointSuffix: string) {
+export function verifyVideoErrorResponse(event: Event.Message, errorHolder: ErrorHolder) {
     expect(event)
         .to.have.property('event')
         .to.have.property('payload').eql(errorHolder.errorPayload)
@@ -241,7 +242,7 @@ export async function testMockErrorResponse(messageContext: DirectiveMessageCont
 
 export async function testMockVideoErrorResponse(messageContext: DirectiveMessageContext) {
     const ret = await callHandler(messageContext, '');
-    verifyVideoErrorResponse(ret, errors.videoError, '');
+    verifyVideoErrorResponse(ret, errors.videoError);
 }
 export function generateReplyTopicName(messageSuffix: string) {
     return 'vestibule-bridge/vestibule-bridge-' + vestibuleClientId + '/alexa/event/' + messageId + '-' + messageSuffix;
@@ -267,31 +268,34 @@ export function verifySuccessResponse(event: Event.Message, eventContext: EventM
         .to.have.property('properties');
 }
 
+export function emptyParameters(path:string):SSM.Parameter[]{
+    return []
+}
 export async function setupDisconnectedBridge(capabilitites: EndpointCapability) {
-    await directiveMocks([]);
+    await directiveMocks(emptyParameters);
     mockEndpointState({}, capabilitites, localEndpoint, false, vestibuleClientId);
 }
 
 export async function setupInvalidEndpoint(capabilitites: EndpointCapability) {
-    await directiveMocks([]);
+    await directiveMocks(emptyParameters);
     mockEndpointState({}, capabilitites, localEndpoint, true, vestibuleClientId);
 }
 
 export async function setupPoweredOff(capabilitites: EndpointCapability) {
-    await directiveMocks([]);
+    await directiveMocks(emptyParameters);
     mockEndpointState({ ...sharedStates.power.off }, capabilitites, localEndpoint, true, vestibuleClientId);
 }
 
 export async function setupNotWatchingTv(capabilitites: EndpointCapability) {
-    await directiveMocks([]);
+    await directiveMocks(emptyParameters);
     mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing }, capabilitites, localEndpoint, true, vestibuleClientId);
 }
 
 export async function setupNotPlayingContent(capabilitites: EndpointCapability) {
-    await directiveMocks([]);
+    await directiveMocks(emptyParameters);
     mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.stopped }, capabilitites, localEndpoint, true, vestibuleClientId);
 }
 export async function setupWatchingTv(capabilitites: EndpointCapability) {
-    await directiveMocks([]);
+    await directiveMocks(emptyParameters);
     mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing, ...sharedStates.channel }, capabilitites, localEndpoint, true, vestibuleClientId);
 }

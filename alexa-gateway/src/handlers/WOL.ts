@@ -16,11 +16,11 @@ class Handler implements CapabilityHandler<DirectiveNamespace>{
             }
         }
     }
-    async sendEvent(clientId: string, messageId: string,
+    async sendEvent(userSub: string, messageId: string,
         endpointId: string,
         trackedEndpoint: TrackedEndpointShadow,
         correlationToken: string) {
-        const token = await authorization.getToken(clientId);
+        const token = await authorization.getToken(userSub);
         const bearerToken: Message.BearerToken = {
             type: 'BearerToken',
             token: token
@@ -44,7 +44,7 @@ class Handler implements CapabilityHandler<DirectiveNamespace>{
                 endpoint: endpoint
             }
         }
-        await authorization.sendAlexaEvent(message, token, clientId);
+        await authorization.sendAlexaEvent(message, token, userSub);
     }
 }
 

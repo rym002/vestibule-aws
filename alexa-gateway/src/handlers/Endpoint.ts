@@ -1,8 +1,8 @@
-import { DirectiveHandler, DirectiveMessage, contextReporters, DirectiveResponseByNamespace } from '.';
+import { DirectiveHandler, DirectiveMessage, contextReporters, DirectiveResponseByNamespace, SHADOW_PREFIX } from '.';
 import { SubType, Shadow, LocalEndpoint, toLocalEndpoint, getShadowEndpoint, getShadowEndpointMetadata, ErrorHolder, AlexaEndpoint, EndpointState, EndpointCapability, EndpointStateMetadata, EndpointMetadata, DirectiveErrorResponse, ShadowMetadata } from '@vestibule-link/iot-types';
 import { Message, Discovery, Alexa, PowerController, PlaybackStateReporter } from '@vestibule-link/alexa-video-skill-types';
 import { CapabilityHandler } from './Discovery';
-import { TopicResponse, sendMessage } from '../iot';
+import { TopicResponse, sendMessage, getShadow, ensureDeviceActive } from '../iot';
 import * as _ from 'lodash';
 
 type EndpointNamespaces = {
@@ -36,8 +36,16 @@ export abstract class DefaultEndpointHandler<NS extends EndpointNamespaces> impl
     getScope(message: SubType<DirectiveMessage, NS>): Message.Scope {
         return message.endpoint.scope;
     }
+
+    async lookupShadow(userSub:string){
+        const clientId = SHADOW_PREFIX + userSub;
+        const shadow = await getShadow(clientId);
+        ensureDeviceActive(shadow);
+        return shadow;
+    }
     async getResponse(message: SubType<DirectiveMessage, NS>, messageId: string,
-        clientId: string, shadow: Shadow): Promise<SubType<DirectiveResponseByNamespace, NS>> {
+        userSub: string): Promise<SubType<DirectiveResponseByNamespace, NS>> {
+        const shadow = await this.lookupShadow(userSub);
         const endpoint = message.endpoint;
         const localEndpoint = toLocalEndpoint(endpoint.endpointId);
         const shadowEndpoint = getShadowEndpoint(shadow, localEndpoint);
@@ -47,7 +55,7 @@ export abstract class DefaultEndpointHandler<NS extends EndpointNamespaces> impl
                 endpoint: shadowEndpoint,
                 metadata: shadowEndpointMetadata
             }
-            return await this.getEndpointResponse(message, messageId, localEndpoint, trackedEndpoint, clientId);
+            return await this.getEndpointResponse(message, messageId, localEndpoint, trackedEndpoint, userSub);
         }
         const error: ErrorHolder = {
             errorType: Alexa.namespace,
@@ -87,24 +95,24 @@ export abstract class DefaultEndpointHandler<NS extends EndpointNamespaces> impl
     }
     abstract async getEndpointResponse(message: SubType<DirectiveMessage, NS>, messageId: string,
         localEndpoint: LocalEndpoint, trackedEndpoint: TrackedEndpointShadow,
-        clientId: string): Promise<SubType<DirectiveResponseByNamespace, NS>>;
+        userSub: string): Promise<SubType<DirectiveResponseByNamespace, NS>>;
 
 }
 
 type DirectiveCapabilities = Extract<EndpointNamespaces, Discovery.CapabilityInterfaces>
 
 export abstract class DefaultEndpointCapabilityHandler<NS extends DirectiveCapabilities> extends DefaultEndpointHandler<NS> implements CapabilityHandler<NS> {
-    abstract getCapability(capabilities: NonNullable<SubType<EndpointCapability,NS>>): SubType<Discovery.NamedCapabilities, NS>;
+    abstract getCapability(capabilities: NonNullable<SubType<EndpointCapability, NS>>): SubType<Discovery.NamedCapabilities, NS>;
 }
 
 export abstract class DefaultIotEndpointHandler<NS extends DirectiveCapabilities> extends DefaultEndpointCapabilityHandler<NS> {
     async getEndpointResponse(message: SubType<DirectiveMessage, NS>, messageId: string,
         localEndpoint: LocalEndpoint, trackedEndpoint: TrackedEndpointShadow,
-        clientId: string): Promise<SubType<DirectiveResponseByNamespace, NS>> {
+        userSub: string): Promise<SubType<DirectiveResponseByNamespace, NS>> {
 
         const messageFlags = this.getMessageFlags(message, trackedEndpoint.endpoint, localEndpoint);
         const iotResp = await sendMessage(
-            clientId,
+            SHADOW_PREFIX + userSub,
             messageFlags,
             messageId,
             localEndpoint
@@ -220,12 +228,12 @@ export function convertToContext(trackedEndpoint: TrackedEndpointShadow): Alexa.
     if (endpoint.states && endpointMetadata.states) {
         const states = endpoint.states;
         const statesMetadata = endpointMetadata.states;
-        const contextStates = _.map(states,(componentStates,reporterNameKey) => {
+        const contextStates = _.map(states, (componentStates, reporterNameKey) => {
             const reporterName = <Alexa.ContextInterfaces>reporterNameKey
             const componentMetadata = statesMetadata[reporterName];
             if (componentStates && componentMetadata) {
                 const reporter = contextReporters[reporterName];
-                const componentCapabilities = _.map(componentStates,(stateValue:any,key) => {
+                const componentCapabilities = _.map(componentStates, (stateValue: any, key) => {
                     const keyValue = <keyof typeof componentStates>key
                     const statesMetadataValue = componentMetadata[keyValue]
                     const ret = <NamedContextValue<any, any>>reporter.convertToProperty(keyValue, stateValue, statesMetadataValue);

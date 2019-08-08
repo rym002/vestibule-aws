@@ -9,7 +9,7 @@ const namespace: DirectiveNamespace = Alexa.namespace;
 class Handler extends DefaultEndpointHandler<DirectiveNamespace> {
     async getEndpointResponse(message: SubType<DirectiveMessage, DirectiveNamespace>, messageId: string,
         localEndpoint: LocalEndpoint, trackedEndpoint: TrackedEndpointShadow,
-        clientId: string): Promise<SubType<DirectiveResponseByNamespace, DirectiveNamespace>> {
+        userSub: string): Promise<SubType<DirectiveResponseByNamespace, DirectiveNamespace>> {
         if (!message.header.correlationToken) {
             throw 'Missing Correlation Token';
         }

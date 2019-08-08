@@ -5,15 +5,15 @@ import { getCognitoTestParameters, setupCognitoMock } from "./CognitoMock";
 import { getIotTestParameters, mockShadow, resetIotDataGetThingShadow } from "./IotDataMock";
 import { mockSSM, resetSSM } from "./SSMMocks";
 
-export function directiveSSMMocks(additionalParameters: SSM.Parameter[]) {
+export function directiveSSMMocks(additionalParameters: (path:string)=>SSM.Parameter[]) {
     mockSSM((params: SSM.Types.GetParametersByPathRequest) => {
         return {
-            Parameters: [...getCognitoTestParameters(params.Path), ...getIotTestParameters(params.Path), ...additionalParameters]
+            Parameters: [...getCognitoTestParameters(params.Path), ...getIotTestParameters(params.Path), ...additionalParameters(params.Path)]
         };
     });
 }
 
-export async function directiveMocks(additionalParameters: SSM.Parameter[]) {
+export async function directiveMocks(additionalParameters: (path:string)=>SSM.Parameter[]) {
     directiveSSMMocks(additionalParameters);
     await setupCognitoMock();
 }

@@ -36,7 +36,7 @@ class Handler extends DefaultEndpointCapabilityHandler<DirectiveNamespace> imple
 
     async getEndpointResponse(message: SubType<DirectiveMessage, DirectiveNamespace>, messageId: string,
         localEndpoint: LocalEndpoint, trackedEndpoint: TrackedEndpointShadow,
-        clientId: string): Promise<SubType<DirectiveResponseByNamespace, DirectiveNamespace>> {
+        userSub: string): Promise<SubType<DirectiveResponseByNamespace, DirectiveNamespace>> {
         const name = message.name;
         let error = undefined;
         switch (name) {
@@ -46,7 +46,7 @@ class Handler extends DefaultEndpointCapabilityHandler<DirectiveNamespace> imple
                 const powerState = powerStates ? powerStates.powerState : undefined;
 
                 if (message.header.correlationToken && shadowEndpoint.states && powerState == 'OFF') {
-                    await wol.sendEvent(clientId, messageId, message.endpoint.endpointId, trackedEndpoint, message.header.correlationToken);
+                    await wol.sendEvent(userSub, messageId, message.endpoint.endpointId, trackedEndpoint, message.header.correlationToken);
                     const context = convertToContext(trackedEndpoint);
                     return {
                         namespace: Alexa.namespace,

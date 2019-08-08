@@ -1,6 +1,6 @@
 import { Discovery, Message } from '@vestibule-link/alexa-video-skill-types';
 import { DirectiveErrorResponse, EndpointCapability, EndpointInfo, Providers, Shadow, SubType } from '@vestibule-link/iot-types';
-import { DirectiveHandler, DirectiveMessage, DirectiveResponseByNamespace } from '.';
+import { DirectiveHandler, DirectiveMessage, DirectiveResponseByNamespace, SHADOW_PREFIX } from '.';
 import ChannelController from './ChannelController';
 import EndpointHealth from './EndpointHealth';
 import Launcher from './Launcher';
@@ -13,11 +13,12 @@ import SeekController from './SeekController';
 import VideoRecorder from './VideoRecorder';
 import WakeOnLANController from './WOL';
 import * as _ from 'lodash';
+import { getShadow } from '../iot';
 
 type DirectiveNamespace = Discovery.NamespaceType;
 
 export interface CapabilityHandler<NS extends Discovery.CapabilityInterfaces> {
-    getCapability(capabilities: NonNullable<SubType<EndpointCapability,NS>>): SubType<Discovery.NamedCapabilities, NS>
+    getCapability(capabilities: NonNullable<SubType<EndpointCapability, NS>>): SubType<Discovery.NamedCapabilities, NS>
 }
 
 type CapabilityHandlers = {
@@ -40,12 +41,21 @@ const handlers: CapabilityHandlers = {
 
 
 class Handler implements DirectiveHandler<DirectiveNamespace>{
+    shouldCheckShadow() {
+        return true;
+    }
     getScope(message: SubType<DirectiveMessage, DirectiveNamespace>): Message.Scope {
         return message.payload.scope;
     }
+    async lookupShadow(userSub: string) {
+        const clientId = SHADOW_PREFIX + userSub;
+        const shadow = await getShadow(clientId);
+        return shadow;
+    }
     async getResponse(message: SubType<DirectiveMessage,
-        DirectiveNamespace>, messageId: string, clientId: string,
-        shadow: Shadow): Promise<SubType<DirectiveResponseByNamespace, DirectiveNamespace>> {
+        DirectiveNamespace>, messageId: string,
+        userSub: string): Promise<SubType<DirectiveResponseByNamespace, DirectiveNamespace>> {
+        const shadow = await this.lookupShadow(userSub);
         return {
             namespace: 'Alexa.Discovery',
             name: 'Discover.Response',

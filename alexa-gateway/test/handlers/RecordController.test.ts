@@ -5,7 +5,7 @@ import 'mocha';
 import { SinonStub } from 'sinon';
 import { resetDirectiveMocks, directiveMocks, mockEndpointState } from '../mock/DirectiveMocks';
 import { mockMqtt } from '../mock/MqttMock';
-import { DirectiveMessageContext, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupPoweredOff, testDisconnectedBridge, testInvalidEndpoint, testPoweredOffEndpoint, testSuccessfulMessage, testMockErrorResponse, sharedStates } from './TestHelper';
+import { DirectiveMessageContext, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupPoweredOff, testDisconnectedBridge, testInvalidEndpoint, testPoweredOffEndpoint, testSuccessfulMessage, testMockErrorResponse, sharedStates, emptyParameters } from './TestHelper';
 import { localEndpoint, vestibuleClientId } from '../mock/IotDataMock';
 
 describe('RecordController', () => {
@@ -92,7 +92,7 @@ describe('RecordController', () => {
 
         context('RECORDING', () => {
             before(async () => {
-                await directiveMocks([]);
+                await directiveMocks(emptyParameters);
                 mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing,...sharedStates.record.recording }, capabilitites, localEndpoint, true, vestibuleClientId);
             })
             after((done) => {
@@ -118,7 +118,7 @@ describe('RecordController', () => {
         })
         context('NOT_RECORDING', () => {
             before(async () => {
-                await directiveMocks([]);
+                await directiveMocks(emptyParameters);
                 mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing,...sharedStates.record.not_recording }, capabilitites, localEndpoint, true, vestibuleClientId);
             })
             after((done) => {

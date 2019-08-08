@@ -6,11 +6,12 @@ import { authenticationProps, generateToken, generateValidScope, getSharedKey } 
 import { directiveMocks, resetDirectiveMocks } from '../mock/DirectiveMocks';
 import { localEndpoint, messageId, mockShadow, vestibuleClientId } from '../mock/IotDataMock';
 import { fakeCallback, FakeContext } from '../mock/LambdaMock';
+import { emptyParameters } from './TestHelper';
 
 
 describe('Discovery', () => {
     before(async () => {
-        await directiveMocks([]);
+        await directiveMocks(emptyParameters);
         mockShadow({
             state: {
                 reported: {

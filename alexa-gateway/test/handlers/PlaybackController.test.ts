@@ -1,6 +1,6 @@
 import { assert } from 'chai';
 import 'mocha';
-import { setupDisconnectedBridge, testDisconnectedBridge, DirectiveMessageContext, setupInvalidEndpoint, testInvalidEndpoint, testPoweredOffEndpoint, setupPoweredOff, sharedStates, generateReplyTopicName, mockErrorSuffix, errors, testSuccessfulMessage, EventMessageContext, testStoppedEndpoint, testMockErrorResponse } from './TestHelper';
+import { setupDisconnectedBridge, testDisconnectedBridge, DirectiveMessageContext, setupInvalidEndpoint, testInvalidEndpoint, testPoweredOffEndpoint, setupPoweredOff, sharedStates, generateReplyTopicName, mockErrorSuffix, errors, testSuccessfulMessage, EventMessageContext, testStoppedEndpoint, testMockErrorResponse, emptyParameters } from './TestHelper';
 import { resetDirectiveMocks, directiveMocks, mockEndpointState } from '../mock/DirectiveMocks';
 import { EndpointCapability, ResponseMessage } from '@vestibule-link/iot-types';
 import { localEndpoint, vestibuleClientId } from '../mock/IotDataMock';
@@ -108,7 +108,7 @@ describe('PlaybackController', () => {
 
         context('PLAYING', () => {
             before(async () => {
-                await directiveMocks([]);
+                await directiveMocks(emptyParameters);
                 mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing }, capabilitites, localEndpoint, true, vestibuleClientId);
             })
             after((done) => {
@@ -171,7 +171,7 @@ describe('PlaybackController', () => {
 
         context('PAUSED', () => {
             before(async () => {
-                await directiveMocks([]);
+                await directiveMocks(emptyParameters);
                 mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.paused }, capabilitites, localEndpoint, true, vestibuleClientId);
             })
             after((done) => {
@@ -234,7 +234,7 @@ describe('PlaybackController', () => {
         })
         context('STOPPED', () => {
             before(async () => {
-                await directiveMocks([]);
+                await directiveMocks(emptyParameters);
                 mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.stopped }, capabilitites, localEndpoint, true, vestibuleClientId);
             })
             after((done) => {

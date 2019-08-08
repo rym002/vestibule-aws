@@ -2,7 +2,7 @@ import { EndpointCapability, EndpointState } from '@vestibule-link/iot-types';
 import 'mocha';
 import { directiveMocks, mockEndpointState, resetDirectiveMocks } from '../mock/DirectiveMocks';
 import { localEndpoint, vestibuleClientId } from '../mock/IotDataMock';
-import { callHandler, DirectiveMessageContext, EventMessageContext, testDisconnectedBridge, testInvalidEndpoint, testSuccessfulMessage } from './TestHelper';
+import { callHandler, DirectiveMessageContext, EventMessageContext, testDisconnectedBridge, testInvalidEndpoint, testSuccessfulMessage, emptyParameters } from './TestHelper';
 
 describe('Alexa', () => {
     context('ReportState', () => {
@@ -38,7 +38,7 @@ describe('Alexa', () => {
         }
             context('connected bridge', () => {
             before(async () => {
-                await directiveMocks([]);
+                await directiveMocks(emptyParameters);
                 mockEndpointState(state, capabilitites, localEndpoint, true, vestibuleClientId);
             })
             after((done) => {
@@ -57,7 +57,7 @@ describe('Alexa', () => {
 
         context('disconnected bridge', () => {
             before(async () => {
-                await directiveMocks([]);
+                await directiveMocks(emptyParameters);
                 mockEndpointState(state, capabilitites, localEndpoint, false, vestibuleClientId);
             })
             after((done) => {

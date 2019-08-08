@@ -12,7 +12,7 @@ const LWA_URI = 'https://api.amazon.com/auth/o2/token'
 interface AlexaParameters {
     gatewayUri: string
 }
-type GrantTypes = 'authorization_code'
+export type GrantTypes = 'authorization_code'
     | 'refresh_token';
 
 
@@ -22,15 +22,15 @@ interface TokenRequest extends ParsedUrlQueryInput {
     client_secret: string;
 
 }
-interface GrantRequest extends TokenRequest {
+export interface GrantRequest extends TokenRequest {
     code: string;
 }
 
-interface RefreshTokenRequest extends TokenRequest {
+export interface RefreshTokenRequest extends TokenRequest {
     refresh_token: string;
 }
 
-interface DeviceTokenResponse {
+export interface DeviceTokenResponse {
     access_token: string;
     refresh_token: string;
     token_type: string;
@@ -93,13 +93,19 @@ const alexaAxios = axios.create({
 type DirectiveNamespace = Authorization.NamespaceType;
 
 class Handler implements DirectiveHandler<DirectiveNamespace>{
-    readonly db = new DynamoDB();
+    private _db: DynamoDB | undefined;
+    get db() {
+        if (!this._db) {
+            this._db = new DynamoDB();
+        }
+        return this._db;
+    }
     getScope(message: SubType<DirectiveMessage, DirectiveNamespace>): Message.Scope {
         return message.payload.grantee;
     }
     async getResponse(message: SubType<DirectiveMessage, DirectiveNamespace>,
-        messageId: string, clientId: string, shadow: Shadow): Promise<SubType<DirectiveResponseByNamespace, DirectiveNamespace>> {
-        const resp = await this.lwaLogin(message.payload, clientId);
+        messageId: string, userSub: string): Promise<SubType<DirectiveResponseByNamespace, DirectiveNamespace>> {
+        const resp = await this.lwaLogin(message.payload, userSub);
         return {
             namespace: Authorization.namespace,
             name: 'AcceptGrant.Response',
@@ -160,6 +166,14 @@ class Handler implements DirectiveHandler<DirectiveNamespace>{
                 N: (Math.floor(Date.now() / 1000) + tokenResponse.expires_in) + ''
             }
         }
+    }
+
+    private async saveAccessToken(tokenResponse: DeviceTokenResponse, clientId: string): Promise<void> {
+        const accessToken: TokenRecord = this.convertToAccessToken(tokenResponse, clientId);
+        await this.db.putItem({
+            TableName: AUTH_TOKEN_TABLE,
+            Item: accessToken
+        }).promise();
     }
     private async updateTokens(tokenResponse: DeviceTokenResponse, clientId: string): Promise<void> {
         const refreshToken: TokenRecord = this.convertToRefreshToken(tokenResponse, clientId);
@@ -225,7 +239,7 @@ class Handler implements DirectiveHandler<DirectiveNamespace>{
 
     private async requestAndSaveToken(request: TokenRequest, clientId: string): Promise<DeviceTokenResponse> {
         const resp = await this.requestAccessToken(request);
-        this.updateTokens(resp, clientId);
+        await this.updateTokens(resp, clientId);
         return resp;
     }
     private async getAuthToken(tokenKey: TokenKey, tableName: string): Promise<string | undefined> {
@@ -240,15 +254,15 @@ class Handler implements DirectiveHandler<DirectiveNamespace>{
             return authTokenRecord.Item.token.S;
         }
     }
-    private getTokenKey(clientId: string): TokenKey {
+    private getTokenKey(userSub: string): TokenKey {
         return {
             client_id: {
-                S: clientId
+                S: userSub
             }
         }
     }
-    async getToken(clientId: string): Promise<string> {
-        const tokenKey = this.getTokenKey(clientId);
+    async getToken(userSub: string): Promise<string> {
+        const tokenKey = this.getTokenKey(userSub);
 
         const authToken = await this.getAuthToken(tokenKey, AUTH_TOKEN_TABLE);
         if (authToken) {
@@ -261,6 +275,7 @@ class Handler implements DirectiveHandler<DirectiveNamespace>{
                     ... { refresh_token: refreshToken }
                 }
                 const response = await this.requestAccessToken(request);
+                await this.saveAccessToken(response, userSub);
                 return response.access_token;
             }
         }
@@ -276,25 +291,29 @@ class Handler implements DirectiveHandler<DirectiveNamespace>{
     private async deleteClientTokens(clientId: string): Promise<void> {
         const tokenKey = this.getTokenKey(clientId);
         console.time('deleteToken')
-        await this.db.batchWriteItem({
-            RequestItems: {
-                [REFRESH_TOKEN_TABLE]: [
-                    {
-                        DeleteRequest: {
-                            Key: tokenKey
+        try {
+            await this.db.batchWriteItem({
+                RequestItems: {
+                    [REFRESH_TOKEN_TABLE]: [
+                        {
+                            DeleteRequest: {
+                                Key: tokenKey
+                            }
                         }
-                    }
-                ],
-                [AUTH_TOKEN_TABLE]: [
-                    {
-                        DeleteRequest: {
-                            Key: tokenKey
+                    ],
+                    [AUTH_TOKEN_TABLE]: [
+                        {
+                            DeleteRequest: {
+                                Key: tokenKey
+                            }
                         }
-                    }
-                ]
-            }
-        }).promise();
-        console.timeEnd('deleteToken')
+                    ]
+                }
+            }).promise();
+
+        } finally {
+            console.timeEnd('deleteToken')
+        }
     }
     async sendAlexaEvent(request: Event.Message, token: string, clientId: string) {
         try {
@@ -311,7 +330,7 @@ class Handler implements DirectiveHandler<DirectiveNamespace>{
             console.log(errorResponse);
             switch (errorResponse.payload.type) {
                 case 'SKILL_DISABLED_EXCEPTION':
-                    this.deleteClientTokens(clientId);
+                    await this.deleteClientTokens(clientId);
                     break;
             }
             const error: ErrorHolder = {
