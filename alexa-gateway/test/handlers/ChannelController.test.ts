@@ -1,13 +1,13 @@
 import { ChannelController } from '@vestibule-link/alexa-video-skill-types';
 import { EndpointCapability, ResponseMessage } from '@vestibule-link/iot-types';
-import { assert } from 'chai';
 import 'mocha';
-import { SinonStub } from 'sinon';
+import * as mqtt from 'mqtt';
+import { createSandbox, SinonSpy } from 'sinon';
 import { resetDirectiveMocks } from '../mock/DirectiveMocks';
 import { mockMqtt } from '../mock/MqttMock';
 import { DirectiveMessageContext, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupNotWatchingTv, setupPoweredOff, setupWatchingTv, sharedStates, testDisconnectedBridge, testInvalidEndpoint, testMockErrorResponse, testNotWatchingTvEndpoint, testPoweredOffEndpoint, testSuccessfulMessage } from './TestHelper';
 
-describe('ChannelController', () => {
+describe('ChannelController', function () {
     const skipChannelsHeader = {
         namespace: 'Alexa.ChannelController',
         name: 'SkipChannels',
@@ -29,7 +29,7 @@ describe('ChannelController', () => {
         channelCount: 1
     }
 
-    const capabilitites: EndpointCapability = {
+    const capabilities: EndpointCapability = {
         "Alexa.ChannelController": ['channel']
     }
     const changeChannelMessageSuffix = 'changeChannel';
@@ -59,10 +59,10 @@ describe('ChannelController', () => {
         response: {}
     }
 
-    context(('connected bridge'), () => {
-        let mqttSave: SinonStub<any[], any>;
-        beforeEach(() => {
-            mqttSave = mockMqtt((topic, mqttMock) => {
+    context(('connected bridge'), function () {
+        const sandbox = createSandbox()
+        beforeEach(function () {
+            mockMqtt((topic, mqttMock) => {
                 let resp: ResponseMessage<any> | undefined;
                 const channelTopic = generateReplyTopicName(changeChannelMessageSuffix);
                 const skipTopic = generateReplyTopicName(skipChannelsMessageSuffix);
@@ -85,133 +85,133 @@ describe('ChannelController', () => {
                 if (resp && 'string' == typeof topic) {
                     mqttMock.sendMessage(topic, resp);
                 }
-            })
+            }, sandbox)
         })
-        afterEach(() => {
-            mqttSave.restore()
+        afterEach(function () {
+            sandbox.restore()
         })
 
-        context('Watching TV', () => {
-            before(async () => {
-                await setupWatchingTv(capabilitites);
+        context('Watching TV', function () {
+            before(async function () {
+                await setupWatchingTv(capabilities);
             })
-            after((done) => {
+            after(() => {
                 resetDirectiveMocks()
             })
-            context('SkipChannels', () => {
+            context('SkipChannels', function () {
                 const messageContext = skipChannelsContext;
-                it('should send a request to change channel', async () => {
+                it('should send a request to change channel', async function () {
                     await testSuccessfulMessage(messageContext, eventContext)
-                    assert(mqttSave.called)
+                    sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
                 })
-                it('should map an error', async () => {
+                it('should map an error', async function () {
                     await testMockErrorResponse({ ...messageContext, messageSuffix: mockErrorSuffix });
-                    assert(mqttSave.called)
+                    sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
                 })
             })
-            context('ChangeChannel', () => {
+            context('ChangeChannel', function () {
                 const messageContext = changeChannelContext;
-                it('should change channel if not on the current channel', async () => {
+                it('should change channel if not on the current channel', async function () {
                     await testSuccessfulMessage(messageContext, eventContext)
-                    assert(mqttSave.called)
+                    sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
                 })
-                it('should return success if its on the same channel', async () => {
+                it('should return success if its on the same channel', async function () {
                     await testSuccessfulMessage({
                         ...messageContext,
                         request: {
                             channel: sharedStates.channel['Alexa.ChannelController']!.channel!
                         }
                     }, eventContext)
-                    assert(mqttSave.notCalled)
+                    sandbox.assert.notCalled(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
                 })
-                it('should map an error', async () => {
+                it('should map an error', async function () {
                     await testMockErrorResponse({ ...messageContext, messageSuffix: mockErrorSuffix });
-                    assert(mqttSave.called)
+                    sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
                 })
             })
         })
-        context('Not Watching TV', () => {
-            before(async () => {
-                await setupNotWatchingTv(capabilitites);
+        context('Not Watching TV', function () {
+            before(async function () {
+                await setupNotWatchingTv(capabilities);
             })
-            after((done) => {
+            after(() => {
                 resetDirectiveMocks()
             })
-            context('SkipChannels', () => {
+            context('SkipChannels', function () {
                 const messageContext = skipChannelsContext;
-                it('should return NOT_SUPPORTED_IN_CURRENT_MODE', async () => {
+                it('should return NOT_SUPPORTED_IN_CURRENT_MODE', async function () {
                     await testNotWatchingTvEndpoint(messageContext);
                 })
             })
-            context('ChangeChannel', () => {
+            context('ChangeChannel', function () {
                 const messageContext = changeChannelContext;
-                it('should send a message', async () => {
+                it('should send a message', async function () {
                     await testSuccessfulMessage(messageContext, eventContext)
-                    assert(mqttSave.called)
+                    sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
                 })
 
             })
         })
-        context('Power Off', () => {
-            before(async () => {
-                await setupPoweredOff(capabilitites);
+        context('Power Off', function () {
+            before(async function () {
+                await setupPoweredOff(capabilities);
             })
-            after((done) => {
+            after(() => {
                 resetDirectiveMocks()
             })
-            context('SkipChannels', () => {
+            context('SkipChannels', function () {
                 const messageContext = skipChannelsContext;
-                it('should return NOT_IN_OPERATION', async () => {
+                it('should return NOT_IN_OPERATION', async function () {
                     await testPoweredOffEndpoint(messageContext)
                 })
             })
-            context('ChangeChannel', () => {
+            context('ChangeChannel', function () {
                 const messageContext = changeChannelContext;
-                it('should return NOT_IN_OPERATION', async () => {
+                it('should return NOT_IN_OPERATION', async function () {
                     await testPoweredOffEndpoint(messageContext)
                 })
 
             })
 
         })
-        context('Invalid Endpoint', () => {
-            before(async () => {
-                await setupInvalidEndpoint(capabilitites);
+        context('Invalid Endpoint', function () {
+            before(async function () {
+                await setupInvalidEndpoint(capabilities);
             })
-            after((done) => {
+            after(() => {
                 resetDirectiveMocks()
             })
-            context('SkipChannels', () => {
+            context('SkipChannels', function () {
                 const messageContext = skipChannelsContext;
-                it('should return NO_SUCH_ENDPOINT', async () => {
+                it('should return NO_SUCH_ENDPOINT', async function () {
                     await testInvalidEndpoint(messageContext);
                 })
             })
-            context('ChangeChannel', () => {
+            context('ChangeChannel', function () {
                 const messageContext = changeChannelContext;
-                it('should return NO_SUCH_ENDPOINT', async () => {
+                it('should return NO_SUCH_ENDPOINT', async function () {
                     await testInvalidEndpoint(messageContext);
                 })
             })
 
         })
     })
-    context(('disconnected bridge'), () => {
-        before(async () => {
-            await setupDisconnectedBridge(capabilitites);
+    context(('disconnected bridge'), function () {
+        before(async function () {
+            await setupDisconnectedBridge(capabilities);
         })
-        after((done) => {
+        after(() => {
             resetDirectiveMocks()
         })
-        context('SkipChannels', () => {
+        context('SkipChannels', function () {
             const messageContext = skipChannelsContext;
-            it('should return BRIDGE_UNREACHABLE', async () => {
+            it('should return BRIDGE_UNREACHABLE', async function () {
                 await testDisconnectedBridge(messageContext);
             })
         })
-        context('ChangeChannel', () => {
+        context('ChangeChannel', function () {
             const messageContext = changeChannelContext;
-            it('should return BRIDGE_UNREACHABLE', async () => {
+            it('should return BRIDGE_UNREACHABLE', async function () {
                 await testDisconnectedBridge(messageContext);
             })
 

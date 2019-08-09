@@ -10,9 +10,9 @@ import { mockSSM, resetSSM } from './mock/SSMMocks';
 
 use(chaiAsPromised);
 
-describe('Authentication', () => {
-    describe('BearerToken', () => {
-        before(async () => {
+describe('Authentication', function () {
+    describe('BearerToken', function () {
+        beforeEach(async function () {
             mockSSM((params: SSM.Types.GetParametersByPathRequest) => {
                 return {
                     Parameters: getCognitoTestParameters(params.Path)
@@ -20,15 +20,15 @@ describe('Authentication', () => {
             });
             await setupCognitoMock();
         })
-        after((done) => {
+        afterEach(() => {
             resetSSM()
         })
-        it('should return the sub for a valid token', async () => {
+        it('should return the sub for a valid token', async function () {
             const authSub = await getSub(await generateValidScope())
             expect(authSub).equal(vestibuleClientId);
         })
 
-        it('should fail for an expired token', async () => {
+        it('should fail for an expired token', async function () {
             const key = await getSharedKey();
             const token = await generateToken(key, vestibuleClientId, authenticationProps.testClientIds[0], new Date(Date.now() - 5000), authenticationProps.testPoolId, authenticationProps.testRegionId);
             await authErrorTest({
@@ -36,7 +36,7 @@ describe('Authentication', () => {
                 token: token
             }, 'Token Is Expired')
         })
-        it('should fail for invalid client id', async () => {
+        it('should fail for invalid client id', async function () {
             const key = await getSharedKey();
             const token = await generateToken(key, vestibuleClientId, 'badClientId', new Date(Date.now() + 5000), authenticationProps.testPoolId, authenticationProps.testRegionId);
             await authErrorTest({
@@ -44,7 +44,7 @@ describe('Authentication', () => {
                 token: token
             }, 'Token was not issued for this audience')
         })
-        it('should fail for invalid pool id', async () => {
+        it('should fail for invalid pool id', async function () {
             const key = await getSharedKey();
             const token = await generateToken(key, vestibuleClientId, authenticationProps.testClientIds[0], new Date(Date.now() + 5000), 'badPoolId', authenticationProps.testRegionId);
             await authErrorTest({
@@ -53,14 +53,14 @@ describe('Authentication', () => {
             }, 'Invalid Pool Id')
         })
     })
-    describe('Unsupported Tokens', () => {
-        it('it should fail DirectedUserId', async () => {
+    describe('Unsupported Tokens', function () {
+        it('it should fail DirectedUserId', async function () {
             await authErrorTest({
                 type: 'DirectedUserId',
                 directedUserId: 'badUser'
             }, 'Invalid Scope')
         })
-        it('it should fail BearerTokenWithPartition', async () => {
+        it('it should fail BearerTokenWithPartition', async function () {
             await authErrorTest({
                 type: 'BearerTokenWithPartition',
                 token: 'badToken',

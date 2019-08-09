@@ -1,15 +1,16 @@
 import { SeekController } from '@vestibule-link/alexa-video-skill-types';
 import { EndpointCapability, ResponseMessage } from '@vestibule-link/iot-types';
-import { assert, expect } from 'chai';
+import { expect } from 'chai';
 import 'mocha';
-import { SinonStub } from 'sinon';
-import { resetDirectiveMocks, directiveMocks, mockEndpointState } from '../mock/DirectiveMocks';
-import { mockMqtt } from '../mock/MqttMock';
-import { DirectiveMessageContext, errors, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupPoweredOff, testDisconnectedBridge, testInvalidEndpoint, testMockErrorResponse, testPoweredOffEndpoint, sharedStates, EventMessageContext, testSuccessfulMessage, callHandler, emptyParameters } from './TestHelper';
+import * as mqtt from 'mqtt';
+import { createSandbox, SinonSpy } from 'sinon';
+import { directiveMocks, mockEndpointState, resetDirectiveMocks } from '../mock/DirectiveMocks';
 import { localEndpoint, vestibuleClientId } from '../mock/IotDataMock';
+import { mockMqtt } from '../mock/MqttMock';
+import { callHandler, DirectiveMessageContext, emptyParameters, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupPoweredOff, sharedStates, testDisconnectedBridge, testInvalidEndpoint, testMockErrorResponse, testPoweredOffEndpoint } from './TestHelper';
 
-describe('SeekController', () => {
-    const capabilitites: EndpointCapability = {
+describe('SeekController', function () {
+    const capabilities: EndpointCapability = {
         'Alexa.SeekController': true
     }
     const defaultMessageContext: DirectiveMessageContext = {
@@ -36,10 +37,10 @@ describe('SeekController', () => {
             }]
         }
     }
-    context(('connected bridge'), () => {
-        let mqttSave: SinonStub<any[], any>;
-        beforeEach(() => {
-            mqttSave = mockMqtt((topic, mqttMock) => {
+    context(('connected bridge'), function () {
+        const sandbox = createSandbox()
+        beforeEach(function () {
+            mockMqtt((topic, mqttMock) => {
                 let resp: ResponseMessage<any> | undefined;
                 switch (topic) {
                     case generateReplyTopicName('AdjustSeekPosition'):
@@ -58,23 +59,23 @@ describe('SeekController', () => {
                 if (resp && 'string' == typeof topic) {
                     mqttMock.sendMessage(topic, resp);
                 }
-            })
+            }, sandbox)
         })
-        afterEach(() => {
-            mqttSave.restore()
+        afterEach(function () {
+            sandbox.restore()
         })
 
-        context('AdjustSeekPosition', () => {
-            before(async () => {
+        context('AdjustSeekPosition', function () {
+            before(async function () {
                 await directiveMocks(emptyParameters);
-                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing }, capabilitites, localEndpoint, true, vestibuleClientId);
+                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing }, capabilities, localEndpoint, true, vestibuleClientId);
 
             })
-            after((done) => {
+            after(() => {
                 resetDirectiveMocks()
             })
 
-            it('should send a message', async () => {
+            it('should send a message', async function () {
                 const event = await callHandler(defaultMessageContext, '');
                 expect(event)
                     .to.have.property('event')
@@ -87,46 +88,46 @@ describe('SeekController', () => {
                 expect(event)
                     .to.have.property('event')
                     .to.have.property('payload').eql(eventContext.response);
-                assert(mqttSave.called)
+                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
-            it('should map an error', async () => {
+            it('should map an error', async function () {
                 const messageContext = defaultMessageContext
                 await testMockErrorResponse({ ...messageContext, messageSuffix: mockErrorSuffix });
-                assert(mqttSave.called)
+                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
         })
-        context('Power Off', () => {
-            before(async () => {
-                await setupPoweredOff(capabilitites);
+        context('Power Off', function () {
+            before(async function () {
+                await setupPoweredOff(capabilities);
             })
-            after((done) => {
+            after(() => {
                 resetDirectiveMocks()
             })
-            it('should return NOT_IN_OPERATION', async () => {
+            it('should return NOT_IN_OPERATION', async function () {
                 await testPoweredOffEndpoint(defaultMessageContext)
             })
 
         })
-        context('Invalid Endpoint', () => {
-            before(async () => {
-                await setupInvalidEndpoint(capabilitites);
+        context('Invalid Endpoint', function () {
+            before(async function () {
+                await setupInvalidEndpoint(capabilities);
             })
-            after((done) => {
+            after(() => {
                 resetDirectiveMocks()
             })
-            it('should return NO_SUCH_ENDPOINT', async () => {
+            it('should return NO_SUCH_ENDPOINT', async function () {
                 await testInvalidEndpoint(defaultMessageContext);
             })
         })
     })
-    context(('disconnected bridge'), () => {
-        before(async () => {
-            await setupDisconnectedBridge(capabilitites);
+    context(('disconnected bridge'), function () {
+        before(async function () {
+            await setupDisconnectedBridge(capabilities);
         })
-        after((done) => {
+        after(() => {
             resetDirectiveMocks()
         })
-        it('should return BRIDGE_UNREACHABLE', async () => {
+        it('should return BRIDGE_UNREACHABLE', async function () {
             await testDisconnectedBridge(defaultMessageContext);
         })
     })

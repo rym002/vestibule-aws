@@ -4,8 +4,8 @@ import { directiveMocks, mockEndpointState, resetDirectiveMocks } from '../mock/
 import { localEndpoint, vestibuleClientId } from '../mock/IotDataMock';
 import { callHandler, DirectiveMessageContext, EventMessageContext, testDisconnectedBridge, testInvalidEndpoint, testSuccessfulMessage, emptyParameters } from './TestHelper';
 
-describe('Alexa', () => {
-    context('ReportState', () => {
+describe('Alexa', function (){
+    context('ReportState', function (){
         const header = {
             namespace: 'Alexa',
             name: 'ReportState',
@@ -36,35 +36,35 @@ describe('Alexa', () => {
             },
             response: {}
         }
-            context('connected bridge', () => {
-            before(async () => {
+            context('connected bridge', function (){
+            before(async function (){
                 await directiveMocks(emptyParameters);
                 mockEndpointState(state, capabilitites, localEndpoint, true, vestibuleClientId);
             })
-            after((done) => {
+            after(() => {
                 resetDirectiveMocks()
             })
 
-            it('should return the State', async () => {
+            it('should return the State', async function (){
                 const ret = await callHandler(messageContext, '')
                 await testSuccessfulMessage(messageContext, eventContext)
             })
 
-            it('should return NO_SUCH_ENDPOINT', async () => {
+            it('should return NO_SUCH_ENDPOINT', async function (){
                 await testInvalidEndpoint(messageContext);
             })
         })
 
-        context('disconnected bridge', () => {
-            before(async () => {
+        context('disconnected bridge', function (){
+            before(async function (){
                 await directiveMocks(emptyParameters);
                 mockEndpointState(state, capabilitites, localEndpoint, false, vestibuleClientId);
             })
-            after((done) => {
+            after(() => {
                 resetDirectiveMocks()
             })
 
-            it('should return BRIDGE_UNREACHABLE', async () => {
+            it('should return BRIDGE_UNREACHABLE', async function (){
                 await testDisconnectedBridge(messageContext);
             })
         })

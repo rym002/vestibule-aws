@@ -19,7 +19,7 @@ import * as chaiAsPromised from 'chai-as-promised';
 
 use(chaiAsPromised);
 
-describe('Authorization', () => {
+describe('Authorization', function (){
     async function callHandler(authorizationCode: string): Promise<Event.Message> {
         return <Event.Message>await handler({
             directive: {
@@ -110,15 +110,15 @@ describe('Authorization', () => {
         expires_in: 100
     }
 
-    before(async () => {
+    before(async function (){
         await directiveMocks(getLwaTestParameters);
     })
-    after(() => {
+    after(function (){
         resetDirectiveMocks();
     })
-    context('AcceptGrant', () => {
+    context('AcceptGrant', function (){
         let dynamoSpy: SinonSpy | undefined
-        before(() => {
+        before(function (){
             const dynamoMatcher = _.matches(<DynamoDB.Types.BatchWriteItemInput>{
                 RequestItems: {
                     vestibule_auth_tokens: [
@@ -165,10 +165,10 @@ describe('Authorization', () => {
                 }
             })
         })
-        after(() => {
+        after(function (){
             AWSMock.restore('DynamoDB', 'batchWriteItem');
         })
-        it('should fail when LWA returns http error', async () => {
+        it('should fail when LWA returns http error', async function (){
             const token = createGrantRequest('failed')
             mockLwa(token, 401, {
                 error_description: 'Failed'
@@ -182,7 +182,7 @@ describe('Authorization', () => {
                 }
             })
         })
-        it('should save the update and refresh token on success', async () => {
+        it('should save the update and refresh token on success', async function (){
             const token = createGrantRequest('success')
             mockLwa(token, 200, successResponse)
             const event = await callHandler('success')
@@ -200,7 +200,7 @@ describe('Authorization', () => {
             assert(dynamoSpy!.called)
         })
     })
-    context('getToken', () => {
+    context('getToken', function (){
         function mockGetItem(){
             return  mockAwsWithSpy<DynamoDB.Types.GetItemInput, DynamoDB.Types.GetItemOutput>('DynamoDB', 'getItem', (req) => {
                 let retId;
@@ -231,13 +231,13 @@ describe('Authorization', () => {
             AWSMock.restore('DynamoDB', 'batchWriteItem');
             AWSMock.restore('DynamoDB', 'putItem');
         })
-        it('should return the auth token', async () => {
+        it('should return the auth token', async function (){
             let dynamoGetItemSpy = mockGetItem();
             const token = await authorizationHandler.getToken(vestibuleClientId + 'auth')
             expect(token).eq(successResponse.access_token);
         })
 
-        it('should refresh the token and save to dynamodb', async () => {
+        it('should refresh the token and save to dynamodb', async function (){
             let dynamoGetItemSpy = mockGetItem();
             let dynamoPutItemSpy = mockPutItem();
                 const grantRequest = createRefreshTokenRequest(successResponse.refresh_token)
@@ -246,7 +246,7 @@ describe('Authorization', () => {
             expect(token).eq(successResponse.access_token);
             assert(dynamoPutItemSpy.called)
         })
-        it('should fail on missing refresh token', async () => {
+        it('should fail on missing refresh token', async function (){
             await expect(authorizationHandler.getToken(vestibuleClientId + 'error')).to.rejected
                 .and.eventually.to.eql({
                     errorType: Authorization.namespace,
@@ -257,7 +257,7 @@ describe('Authorization', () => {
                 })
         })
 
-        it('should fail on lwa error', async () => {
+        it('should fail on lwa error', async function (){
             const grantRequest = createRefreshTokenRequest(successResponse.refresh_token)
             mockLwa(grantRequest, 401, {
                 error_description: 'Failed'
@@ -273,7 +273,7 @@ describe('Authorization', () => {
 
         })
     })
-    context('Alexa Event', () => {
+    context('Alexa Event', function (){
         const testEvent: Event.Message = {
             event: {
                 header: {
@@ -286,7 +286,7 @@ describe('Authorization', () => {
             }
         }
         let dynamoBatchWriteSpy: SinonSpy | undefined;
-        beforeEach(() => {
+        beforeEach(function (){
             dynamoBatchWriteSpy = mockAwsWithSpy<DynamoDB.Types.BatchWriteItemInput, DynamoDB.Types.BatchGetItemOutput>('DynamoDB', 'batchWriteItem', (req) => {
                 return {
 
@@ -294,10 +294,10 @@ describe('Authorization', () => {
             })
 
         })
-        afterEach(() => {
+        afterEach(function (){
             AWSMock.restore('DynamoDB', 'batchWriteItem');
         })
-        it('should delete the token if SKILL_DISABLED_EXCEPTION', async () => {
+        it('should delete the token if SKILL_DISABLED_EXCEPTION', async function (){
             const errorResponse: EventGateway.AlexaErrorResponse = {
                 header: {
                     messageId: 'test',
@@ -322,7 +322,7 @@ describe('Authorization', () => {
 
             assert(dynamoBatchWriteSpy!.called);
         })
-        it('should throw exception on alexa error', async () => {
+        it('should throw exception on alexa error', async function (){
             const errorResponse: EventGateway.AlexaErrorResponse = {
                 header: {
                     messageId: 'test',
@@ -348,7 +348,7 @@ describe('Authorization', () => {
             assert(dynamoBatchWriteSpy!.notCalled);
 
         })
-        it('should send to alexa', async () => {
+        it('should send to alexa', async function (){
             const alexaGatewaySpy = mockAlexaGateway(testEvent, 'testToken', 200, {});
             await authorizationHandler.sendAlexaEvent(testEvent, 'testToken', vestibuleClientId);            
         })

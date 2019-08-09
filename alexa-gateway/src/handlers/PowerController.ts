@@ -1,4 +1,4 @@
-import { ContextPropertyReporter, DefaultEndpointCapabilityHandler, TrackedEndpointShadow, shadowToDate, NamedContextValue, EndpointStateValue, EndpointStateMetadataValue, convertToContext } from './Endpoint';
+import { ContextPropertyReporter, DefaultEndpointCapabilityHandler, TrackedEndpointShadow, shadowToDate, NamedContextValue, EndpointStateValue, EndpointStateMetadataValue, convertToContext, DefaultIotEndpointHandler, createAlexaResponse, MessageHandlingFlags } from './Endpoint';
 import { SubType, EndpointCapability, EndpointState, LocalEndpoint, ErrorHolder, EndpointStateMetadata } from '@vestibule-link/iot-types';
 import { Alexa, Discovery, PowerController } from '@vestibule-link/alexa-video-skill-types';
 import { DirectiveMessage, DirectiveResponseByNamespace } from '.';
@@ -7,7 +7,9 @@ import wol from './WOL';
 type DirectiveNamespace = PowerController.NamespaceType;
 const namespace: DirectiveNamespace = PowerController.namespace;
 
-class Handler extends DefaultEndpointCapabilityHandler<DirectiveNamespace> implements ContextPropertyReporter<DirectiveNamespace>{
+class Handler extends DefaultIotEndpointHandler<DirectiveNamespace> implements ContextPropertyReporter<DirectiveNamespace>{
+    createResponse = createAlexaResponse;
+
     convertToProperty<K extends keyof Alexa.NamedContext[DirectiveNamespace],
         SK extends keyof NonNullable<EndpointState[DirectiveNamespace]>,
         MK extends keyof NonNullable<EndpointStateMetadata[DirectiveNamespace]>>(key: K,
@@ -20,6 +22,11 @@ class Handler extends DefaultEndpointCapabilityHandler<DirectiveNamespace> imple
             timeOfSample: shadowToDate(metadata)
         }
     }
+
+    verifyShadowEndpoint(message: SubType<DirectiveMessage, DirectiveNamespace>, states: EndpointState) {
+
+    }
+
     getCapability(capabilities: NonNullable<SubType<EndpointCapability, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
         return {
             interface: namespace,
@@ -33,46 +40,54 @@ class Handler extends DefaultEndpointCapabilityHandler<DirectiveNamespace> imple
             }
         }
     }
+    getEndpointMessageFlags(message: SubType<DirectiveMessage, DirectiveNamespace>, states: EndpointState): MessageHandlingFlags {
+        if (message.name == 'TurnOff') {
+            return {
+                request: message.payload,
+                sync: true
+            }
+        }
+        return {
 
+        }
+    }
     async getEndpointResponse(message: SubType<DirectiveMessage, DirectiveNamespace>, messageId: string,
         localEndpoint: LocalEndpoint, trackedEndpoint: TrackedEndpointShadow,
         userSub: string): Promise<SubType<DirectiveResponseByNamespace, DirectiveNamespace>> {
         const name = message.name;
         let error = undefined;
+        const shadowEndpoint = trackedEndpoint.endpoint;
+        const powerStates = shadowEndpoint.states ? shadowEndpoint.states[namespace] : undefined;
+        const powerState = powerStates ? powerStates.powerState : undefined;
         switch (name) {
             case 'TurnOn':
-                const shadowEndpoint = trackedEndpoint.endpoint;
-                const powerStates = shadowEndpoint.states ? shadowEndpoint.states[namespace] : undefined;
-                const powerState = powerStates ? powerStates.powerState : undefined;
 
                 if (message.header.correlationToken && shadowEndpoint.states && powerState == 'OFF') {
                     await wol.sendEvent(userSub, messageId, message.endpoint.endpointId, trackedEndpoint, message.header.correlationToken);
-                    const context = convertToContext(trackedEndpoint);
-                    return {
-                        namespace: Alexa.namespace,
-                        name: 'Response',
-                        endpoint: {
-                            endpointId: message.endpoint.endpointId
-                        },
-                        context: context,
-                        payload: {}
-                    }
+                    return this.createResponse(message, trackedEndpoint, localEndpoint, {
+                        response: {
+                            payload: {},
+                            error: false
+                        }
+                    })
                 }
                 error = {
                     errorType: Alexa.namespace,
                     errorPayload: {
                         type: 'INVALID_VALUE',
-                        message: 'Endpoint does not support TurnOn'
+                        message: 'Endpoint is ON'
                     }
                 }
                 break;
             case 'TurnOff':
-                //TODO support turn off
+                if (powerState == 'ON') {
+                    return super.getEndpointResponse(message, messageId, localEndpoint, trackedEndpoint, userSub);
+                }
                 error = {
                     errorType: Alexa.namespace,
                     errorPayload: {
-                        type: 'INVALID_DIRECTIVE',
-                        message: 'TurnOff not supported'
+                        type: 'INVALID_VALUE',
+                        message: 'Endpoint is OFF'
                     }
                 }
                 break;

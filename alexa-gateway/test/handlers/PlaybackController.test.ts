@@ -1,15 +1,15 @@
-import { assert } from 'chai';
-import 'mocha';
-import { setupDisconnectedBridge, testDisconnectedBridge, DirectiveMessageContext, setupInvalidEndpoint, testInvalidEndpoint, testPoweredOffEndpoint, setupPoweredOff, sharedStates, generateReplyTopicName, mockErrorSuffix, errors, testSuccessfulMessage, EventMessageContext, testStoppedEndpoint, testMockErrorResponse, emptyParameters } from './TestHelper';
-import { resetDirectiveMocks, directiveMocks, mockEndpointState } from '../mock/DirectiveMocks';
-import { EndpointCapability, ResponseMessage } from '@vestibule-link/iot-types';
-import { localEndpoint, vestibuleClientId } from '../mock/IotDataMock';
-import { SinonStub } from 'sinon';
-import { mockMqtt } from '../mock/MqttMock';
 import { PlaybackController, PlaybackStateReporter } from '@vestibule-link/alexa-video-skill-types';
+import { EndpointCapability, ResponseMessage } from '@vestibule-link/iot-types';
+import 'mocha';
+import * as mqtt from 'mqtt';
+import { createSandbox, SinonSpy } from 'sinon';
+import { directiveMocks, mockEndpointState, resetDirectiveMocks } from '../mock/DirectiveMocks';
+import { localEndpoint, vestibuleClientId } from '../mock/IotDataMock';
+import { mockMqtt } from '../mock/MqttMock';
+import { DirectiveMessageContext, emptyParameters, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupPoweredOff, sharedStates, testDisconnectedBridge, testInvalidEndpoint, testMockErrorResponse, testPoweredOffEndpoint, testStoppedEndpoint, testSuccessfulMessage } from './TestHelper';
 
-describe('PlaybackController', () => {
-    const capabilitites: EndpointCapability = {
+describe('PlaybackController', function () {
+    const capabilities: EndpointCapability = {
         "Alexa.PlaybackController": ["FastForward", "Next", "Pause", "Play", "Previous", "Rewind", "StartOver", "Stop"]
     }
 
@@ -46,10 +46,10 @@ describe('PlaybackController', () => {
             }]
         }
     }
-    context(('connected bridge'), () => {
-        let mqttSave: SinonStub<any[], any>;
-        beforeEach(() => {
-            mqttSave = mockMqtt((topic, mqttMock) => {
+    context(('connected bridge'), function () {
+        const sandbox = createSandbox()
+        beforeEach(function () {
+            mockMqtt((topic, mqttMock) => {
                 let resp: ResponseMessage<any> | undefined;
                 switch (topic) {
                     case generateReplyTopicName('Play'):
@@ -100,212 +100,212 @@ describe('PlaybackController', () => {
                 if (resp && 'string' == typeof topic) {
                     mqttMock.sendMessage(topic, resp);
                 }
-            })
+            }, sandbox)
         })
-        afterEach(() => {
-            mqttSave.restore()
+        afterEach(function () {
+            sandbox.restore()
         })
 
-        context('PLAYING', () => {
-            before(async () => {
+        context('PLAYING', function () {
+            before(async function () {
                 await directiveMocks(emptyParameters);
-                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing }, capabilitites, localEndpoint, true, vestibuleClientId);
+                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing }, capabilities, localEndpoint, true, vestibuleClientId);
             })
-            after((done) => {
+            after(() => {
                 resetDirectiveMocks()
             })
-            it('Play should not sent a message', async () => {
+            it('Play should not sent a message', async function () {
                 const messageContext = getDirectiveMessageContext('Play');
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                assert(mqttSave.notCalled)
+                sandbox.assert.notCalled(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
-            it('Pause should send a message', async () => {
+            it('Pause should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Pause');
                 const eventContext = getEventMessageContent('PAUSED');
                 await testSuccessfulMessage(messageContext, eventContext)
-                assert(mqttSave.called)
+                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
-            it('Stop should send a message', async () => {
+            it('Stop should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Stop');
                 const eventContext = getEventMessageContent('STOPPED');
                 await testSuccessfulMessage(messageContext, eventContext)
-                assert(mqttSave.called)
+                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
-            it('StartOver should send a message', async () => {
+            it('StartOver should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('StartOver');
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                assert(mqttSave.called)
+                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
-            it('FastForward should send a message', async () => {
+            it('FastForward should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('FastForward');
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                assert(mqttSave.called)
+                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
-            it('Next should send a message', async () => {
+            it('Next should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Next');
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                assert(mqttSave.called)
+                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
-            it('Previous should send a message', async () => {
+            it('Previous should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Previous');
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                assert(mqttSave.called)
+                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
-            it('Rewind should send a message', async () => {
+            it('Rewind should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Rewind');
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                assert(mqttSave.called)
+                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
-            it('should map an error', async () => {
+            it('should map an error', async function () {
                 const messageContext = getDirectiveMessageContext('Rewind');
                 await testMockErrorResponse({ ...messageContext, messageSuffix: mockErrorSuffix });
-                assert(mqttSave.called)
+                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
         })
 
-        context('PAUSED', () => {
-            before(async () => {
+        context('PAUSED', function () {
+            before(async function () {
                 await directiveMocks(emptyParameters);
-                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.paused }, capabilitites, localEndpoint, true, vestibuleClientId);
+                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.paused }, capabilities, localEndpoint, true, vestibuleClientId);
             })
-            after((done) => {
+            after(() => {
                 resetDirectiveMocks()
             })
-            it('Play should sent a message', async () => {
+            it('Play should sent a message', async function () {
                 const messageContext = getDirectiveMessageContext('Play');
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                assert(mqttSave.called)
+                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
-            it('Pause should not send a message', async () => {
+            it('Pause should not send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Pause');
                 const eventContext = getEventMessageContent('PAUSED');
                 await testSuccessfulMessage(messageContext, eventContext)
-                assert(mqttSave.notCalled)
+                sandbox.assert.notCalled(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
-            it('Stop should send a message', async () => {
+            it('Stop should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Stop');
                 const eventContext = getEventMessageContent('STOPPED');
                 await testSuccessfulMessage(messageContext, eventContext)
-                assert(mqttSave.called)
+                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
-            it('StartOver should send a message', async () => {
+            it('StartOver should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('StartOver');
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                assert(mqttSave.called)
+                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
-            it('FastForward should send a message', async () => {
+            it('FastForward should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('FastForward');
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                assert(mqttSave.called)
+                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
-            it('Next should send a message', async () => {
+            it('Next should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Next');
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                assert(mqttSave.called)
+                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
-            it('Previous should send a message', async () => {
+            it('Previous should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Previous');
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                assert(mqttSave.called)
+                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
-            it('Rewind should send a message', async () => {
+            it('Rewind should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Rewind');
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                assert(mqttSave.called)
+                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
-            it('should map an error', async () => {
+            it('should map an error', async function () {
                 const messageContext = getDirectiveMessageContext('Rewind');
                 await testMockErrorResponse({ ...messageContext, messageSuffix: mockErrorSuffix });
-                assert(mqttSave.called)
+                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
 
         })
-        context('STOPPED', () => {
-            before(async () => {
+        context('STOPPED', function () {
+            before(async function () {
                 await directiveMocks(emptyParameters);
-                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.stopped }, capabilitites, localEndpoint, true, vestibuleClientId);
+                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.stopped }, capabilities, localEndpoint, true, vestibuleClientId);
             })
-            after((done) => {
+            after(() => {
                 resetDirectiveMocks()
             })
-            it('Play should return Content is stopped', async () => {
+            it('Play should return Content is stopped', async function () {
                 const messageContext = getDirectiveMessageContext('Play');
                 testStoppedEndpoint(messageContext);
             })
-            it('Pause should return Content is stopped', async () => {
+            it('Pause should return Content is stopped', async function () {
                 const messageContext = getDirectiveMessageContext('Pause');
                 testStoppedEndpoint(messageContext);
             })
-            it('Stop should return Content is stopped', async () => {
+            it('Stop should return Content is stopped', async function () {
                 const messageContext = getDirectiveMessageContext('Stop');
                 testStoppedEndpoint(messageContext);
             })
-            it('StartOver should return Content is stopped', async () => {
+            it('StartOver should return Content is stopped', async function () {
                 const messageContext = getDirectiveMessageContext('StartOver');
                 testStoppedEndpoint(messageContext);
             })
-            it('FastForward should return Content is stopped', async () => {
+            it('FastForward should return Content is stopped', async function () {
                 const messageContext = getDirectiveMessageContext('FastForward');
                 testStoppedEndpoint(messageContext);
             })
-            it('Next should return Content is stopped', async () => {
+            it('Next should return Content is stopped', async function () {
                 const messageContext = getDirectiveMessageContext('Next');
                 testStoppedEndpoint(messageContext);
             })
-            it('Previous should return Content is stopped', async () => {
+            it('Previous should return Content is stopped', async function () {
                 const messageContext = getDirectiveMessageContext('Previous');
                 testStoppedEndpoint(messageContext);
             })
-            it('Rewind should return Content is stopped', async () => {
+            it('Rewind should return Content is stopped', async function () {
                 const messageContext = getDirectiveMessageContext('Rewind');
                 testStoppedEndpoint(messageContext);
             })
 
         })
-        context('Power Off', () => {
-            before(async () => {
-                await setupPoweredOff(capabilitites);
+        context('Power Off', function () {
+            before(async function () {
+                await setupPoweredOff(capabilities);
             })
-            after((done) => {
+            after(() => {
                 resetDirectiveMocks()
             })
-            it('should return NOT_IN_OPERATION', async () => {
+            it('should return NOT_IN_OPERATION', async function () {
                 await testPoweredOffEndpoint(defaultMessageContext)
             })
 
         })
-        context('Invalid Endpoint', () => {
-            before(async () => {
-                await setupInvalidEndpoint(capabilitites);
+        context('Invalid Endpoint', function () {
+            before(async function () {
+                await setupInvalidEndpoint(capabilities);
             })
-            after((done) => {
+            after(() => {
                 resetDirectiveMocks()
             })
-            it('should return NO_SUCH_ENDPOINT', async () => {
+            it('should return NO_SUCH_ENDPOINT', async function () {
                 await testInvalidEndpoint(defaultMessageContext);
             })
         })
     })
-    context(('disconnected bridge'), () => {
-        before(async () => {
-            await setupDisconnectedBridge(capabilitites);
+    context(('disconnected bridge'), function () {
+        before(async function () {
+            await setupDisconnectedBridge(capabilities);
         })
-        after((done) => {
+        after(() => {
             resetDirectiveMocks()
         })
-        it('should return BRIDGE_UNREACHABLE', async () => {
+        it('should return BRIDGE_UNREACHABLE', async function () {
             await testDisconnectedBridge(defaultMessageContext);
         })
     })

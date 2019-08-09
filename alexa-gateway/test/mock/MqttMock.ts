@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { IClientOptions, Packet, PacketCallback, CloseCallback, IClientSubscribeOptions, ISubscriptionGrant, ClientSubscribeCallback, MqttClient, IStream } from 'mqtt';
-import { SinonStub, stub } from 'sinon';
+import { SinonSandbox } from 'sinon';
 import * as mqtt from 'mqtt';
 
 export interface MockMqttOperations {
@@ -55,7 +55,7 @@ class MockMqtt extends EventEmitter implements MockMqttOperations {
     }
 }
 
-export function mockMqtt(subscribeHandler: (topic: string | string[], mqttMock: MockMqttOperations) => void): SinonStub<any[], any> {
+export function mockMqtt(subscribeHandler: (topic: string | string[], mqttMock: MockMqttOperations) => void, sandbox: SinonSandbox): void {
     const fakeConnect = function (streamBuilder: (client: MqttClient) => IStream, options: IClientOptions) {
         const mqttMock: MockMqttOperations = new MockMqtt(options);
         mqttMock.on('newListener', (event: string, listener: any) => {
@@ -72,5 +72,5 @@ export function mockMqtt(subscribeHandler: (topic: string | string[], mqttMock: 
         })
         return mqttMock;
     };
-    return stub(mqtt, 'MqttClient').callsFake(fakeConnect);
+    sandbox.stub(mqtt, 'MqttClient').callsFake(fakeConnect);
 }

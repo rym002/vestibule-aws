@@ -9,8 +9,8 @@ import { fakeCallback, FakeContext } from '../mock/LambdaMock';
 import { emptyParameters } from './TestHelper';
 
 
-describe('Discovery', () => {
-    before(async () => {
+describe('Discovery', function (){
+    before(async function (){
         await directiveMocks(emptyParameters);
         mockShadow({
             state: {
@@ -31,10 +31,10 @@ describe('Discovery', () => {
             }
         }, vestibuleClientId)
     })
-    after((done) => {
+    after(() => {
         resetDirectiveMocks()
     })
-    it('should discover from thing shadow', async () => {
+    it('should discover from thing shadow', async function (){
         const ret = await handler({
             directive: {
                 header: {
@@ -52,7 +52,7 @@ describe('Discovery', () => {
             .to.have.property('endpoints')
             .to.have.length(1)
     })
-    it('should return empty endpoints on error', async () => {
+    it('should return empty endpoints on error', async function (){
         const key = await getSharedKey();
         const token = await generateToken(key, 'invalidClientId', authenticationProps.testClientIds[0], new Date(Date.now() + 5000), authenticationProps.testPoolId, authenticationProps.testRegionId);
         const ret = await handler({

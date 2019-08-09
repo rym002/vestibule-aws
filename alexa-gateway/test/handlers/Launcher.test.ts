@@ -2,13 +2,14 @@ import { Launcher } from '@vestibule-link/alexa-video-skill-types';
 import { EndpointCapability, ResponseMessage } from '@vestibule-link/iot-types';
 import { assert } from 'chai';
 import 'mocha';
-import { SinonStub } from 'sinon';
+import * as mqtt from 'mqtt';
+import { createSandbox, SinonSpy } from 'sinon';
 import { resetDirectiveMocks } from '../mock/DirectiveMocks';
 import { mockMqtt } from '../mock/MqttMock';
 import { DirectiveMessageContext, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupNotPlayingContent, setupPoweredOff, testDisconnectedBridge, testInvalidEndpoint, testMockErrorResponse, testMockVideoErrorResponse, testPoweredOffEndpoint, testSuccessfulMessage } from './TestHelper';
 
-describe('Launcher', () => {
-    const capabilitites: EndpointCapability = {
+describe('Launcher', function (){
+    const capabilities: EndpointCapability = {
         'Alexa.Launcher': true
     }
 
@@ -34,10 +35,10 @@ describe('Launcher', () => {
         context: []
     }
 
-    context(('connected bridge'), () => {
-        let mqttSave: SinonStub<any[], any>;
-        beforeEach(() => {
-            mqttSave = mockMqtt((topic, mqttMock) => {
+    context(('connected bridge'), function (){
+        const sandbox = createSandbox()
+        beforeEach(function (){
+            mockMqtt((topic, mqttMock) => {
                 let resp: ResponseMessage<any> | undefined;
                 switch (topic) {
                     case generateReplyTopicName('LaunchTarget'):
@@ -62,65 +63,65 @@ describe('Launcher', () => {
                 if (resp && 'string' == typeof topic) {
                     mqttMock.sendMessage(topic, resp);
                 }
-            })
+            },sandbox)
         })
-        afterEach(() => {
-            mqttSave.restore()
+        afterEach(function (){
+            sandbox.restore()
         })
 
-        context('LaunchTarget', () => {
-            before(async () => {
-                await setupNotPlayingContent(capabilitites)
+        context('LaunchTarget', function (){
+            before(async function (){
+                await setupNotPlayingContent(capabilities)
             })
-            after((done) => {
+            after(() => {
                 resetDirectiveMocks()
             })
-            it('should send a message', async () => {
+            it('should send a message', async function (){
                 await testSuccessfulMessage(defaultMessageContext, eventContext)
-                assert(mqttSave.called)
+                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
-            it('should map a alexa error', async () => {
+            it('should map a alexa error', async function (){
                 await testMockErrorResponse({ ...defaultMessageContext, messageSuffix: mockErrorSuffix });
-                assert(mqttSave.called)
+                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
-            it('should map a video error', async () => {
+            it('should map a video error', async function (){
                 await testMockVideoErrorResponse({ ...defaultMessageContext, messageSuffix: mockErrorSuffix + 'Video' });
-                assert(mqttSave.called)
+                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
         })
 
-        context('Power Off', () => {
-            before(async () => {
-                await setupPoweredOff(capabilitites);
+        context('Power Off', function (){
+            before(async function (){
+                await setupPoweredOff(capabilities);
             })
-            after((done) => {
+            after(() => {
                 resetDirectiveMocks()
             })
-            it('should return NOT_IN_OPERATION', async () => {
+            it('should return NOT_IN_OPERATION', async function (){
                 await testPoweredOffEndpoint(defaultMessageContext)
             })
 
         })
-        context('Invalid Endpoint', () => {
-            before(async () => {
-                await setupInvalidEndpoint(capabilitites);
+        context('Invalid Endpoint', function (){
+            before(async function (){
+                await setupInvalidEndpoint(capabilities);
             })
-            after((done) => {
+            after(() => {
                 resetDirectiveMocks()
             })
-            it('should return NO_SUCH_ENDPOINT', async () => {
+            it('should return NO_SUCH_ENDPOINT', async function (){
                 await testInvalidEndpoint(defaultMessageContext);
             })
         })
     })
-    context(('disconnected bridge'), () => {
-        before(async () => {
-            await setupDisconnectedBridge(capabilitites);
+    context(('disconnected bridge'), function (){
+        before(async function (){
+            await setupDisconnectedBridge(capabilities);
         })
-        after((done) => {
+        after(() => {
             resetDirectiveMocks()
         })
-        it('should return BRIDGE_UNREACHABLE', async () => {
+        it('should return BRIDGE_UNREACHABLE', async function (){
             await testDisconnectedBridge(defaultMessageContext);
         })
     })

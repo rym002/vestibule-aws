@@ -5,9 +5,8 @@
   "main": "dist/server.js",
   "scripts": {
     "clean": "rimraf dist && rimraf deploy",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "pack": "claudia pack --no-optional-dependencies --force --output deploy/${npm_package_name}.zip",
-    "build": "npm run clean && tsc && npm run pack"
+    "build": "tsc",
+    "test": "mocha -r ts-node/register --extension ts --recursive"
   },
   "keywords": [],
   "author": "Ray Munian",

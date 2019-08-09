@@ -7,9 +7,9 @@ import * as chaiAsPromised from 'chai-as-promised';
 
 use(chaiAsPromised);
 
-describe('Configuration', () => {
+describe('Configuration', function () {
 
-    before(async () => {
+    before(async function () {
         mockSSM((params: SSM.Types.GetParametersByPathRequest) => {
             return {
                 Parameters: [
@@ -28,18 +28,18 @@ describe('Configuration', () => {
             };
         });
     })
-    after((done) => {
+    after(() => {
         resetSSM()
     })
-    it('should verify String', async () => {
+    it('should verify String', async function () {
         const props = await getParameters('stringTest')
         expect(props).to.have.property('data', 'testValue');
     })
-    it('should verify StringList', async () => {
+    it('should verify StringList', async function () {
         const props = await getParameters('stringListTest')
         expect(props).to.have.property('data').to.eql(['testValue1', 'testValue2'])
     })
-    it('should fail with missing group', async () => {
+    it('should fail with missing group', async function () {
         const gId = 'invalidGroup'
         await expect(getParameters(gId)).to.rejected.and.eventually.
         to.have.property('message').to.equal('Cannot Find Property Group ' + gId)
