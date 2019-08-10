@@ -1,5 +1,4 @@
-import { SSM } from 'aws-sdk'
-import { ErrorHolder } from '@vestibule-link/iot-types';
+import { SSM } from 'aws-sdk';
 
 
 const parameterValues = {};
