@@ -5,7 +5,7 @@ phases:
       nodejs: 10
   pre_build:
     commands:
-      - pip install --user aws-sam-cli
+      - pip install --user aws-sam-cli --no-warn-script-location
       - USER_BASE_PATH=$(python -m site --user-base)
       - export PATH=$PATH:$USER_BASE_PATH/bin
       - cd alexa-gateway
@@ -15,7 +15,7 @@ phases:
     commands:
       - cd alexa-gateway
       - npm run build
-      - npm run test
+      - AWS_ACCESS_KEY_ID=testKey AWS_SECRET_ACCESS_KEY=testSecretKey npm run test
       - cd ..
       - sam build
       - sam package --s3-bucket $BUCKET

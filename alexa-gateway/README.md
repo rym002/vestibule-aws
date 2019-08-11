@@ -1,0 +1,81 @@
+# alexa-gateway
+Lambda function for vestibule used for skill interaction
+
+![Build Status](https://codebuild.us-east-1.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiYVRpZmx4RWJud2VCUkw5d1BOd1BoS3hsY0pEV0pROFRxZFV1R0dhcmc5S3dUcVhCNzNPQWdwREo3bkRCeVVmNGVGWDgvZXNXalhVL1NvQzZFT3dZaSs0PSIsIml2UGFyYW1ldGVyU3BlYyI6IjZzMTFJWmNWNWVqSWdtaU8iLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=master)
+
+## Supports routing Alexa Video Skills commands using IOT
+### Supports
+* Alexa
+  * events
+    * Response
+    * StateReport
+  * directives
+    * ReportState
+* Alexa.Authorization
+  * directives
+    * AcceptGrant
+  * events
+    * AcceptGrant.Response
+    * ErrorResponse
+* Alexa.ChannelController
+  * directives
+    * ChangeChannel
+    * SkipChannels
+  * contexts
+    * channel
+* Alexa.Discovery
+  * directives
+    * Discover
+  * events
+    * Discover.Response
+* Alexa.EndpointHealth
+  * contexts
+    * connectivity
+* Alexa.Launcher
+  * directives
+    * LaunchTarget
+  * contexts
+    * target
+* Alexa.PlaybackController
+  * directives
+    * Play
+    * Pause
+    * Stop
+    * Next
+    * Rewind
+    * FastForward
+    * StartOver
+* Alexa.PlaybackStateReporter
+  * contexts
+    * playbackState
+* Alexa.PowerController
+  * directives
+    * TurnOn
+    * TurnOff
+  * contexts
+    * powerState
+* Alexa.RecordController
+  * directives
+    * StartRecording
+    * StopRecording
+  * contexts
+    * RecordingState
+* Alexa.RemoteVideoPlayer
+  * directives
+    * SearchAndPlay
+    * SearchAndDisplayResults
+* Alexa.SeekController
+  * directives
+    * AdjustSeekPosition
+  * events
+    * StateReport
+* Alexa.SearchAndRecordResponse
+  * directives
+    * SearchAndRecord
+    * CancelRecording
+    * DeleteRecording
+  * events
+    * Alexa.SearchAndRecordResponse
+* Alexa.WakeOnLANController
+  * events
+    * WakeUp
