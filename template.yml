@@ -1,4 +1,16 @@
 Transform: 'AWS::Serverless-2016-10-31'
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: vestibule-lambda
+    Description: Lambda for vestibule
+    Author: Ray Munian
+    SpdxLicenseId: Apache-2.0
+    LicenseUrl: LICENSE.txt
+    ReadmeUrl: README.md
+    Labels: ['tests']
+    HomePageUrl: https://github.com/rym002/vestibule-lambda
+    SemanticVersion: 0.0.1
+    SourceCodeUrl: https://github.com/rym002/vestibule-lambda
 Resources:
   AlexaVestibuleGateway:
     Type: 'AWS::Serverless::Function'

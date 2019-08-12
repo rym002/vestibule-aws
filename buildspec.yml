@@ -18,4 +18,9 @@ phases:
       - AWS_ACCESS_KEY_ID=testKey AWS_SECRET_ACCESS_KEY=testSecretKey npm run test
       - cd ..
       - sam build
-      - sam package --s3-bucket $BUCKET
+      - sam package --s3-bucket $S3BUCKET --s3-prefix $S3PREFIX --output-template-file packaged.yml
+artifacts:
+  type: zip
+  files:
+    - template.yml
+    - packaged.yml
