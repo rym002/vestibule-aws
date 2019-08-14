@@ -149,6 +149,12 @@ Resources:
               - logs:PutLogEvents
             Resource:
               - arn:aws:logs:*:*:log-group:*
+          -
+            Effect: Allow
+            Action: 
+              - ssm:GetParameters
+              - ssm:GetParametersByPath
+            Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter//vestibule/dev
   VestibuleClientPolicy:
     Type: AWS::IoT::Policy
     Properties:
@@ -188,12 +194,6 @@ Resources:
             Effect: Allow
             Action: iot:Connect
             Resource: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:client/vestibule-bridge-*
-          -
-            Effect: Allow
-            Action: 
-              - ssm:GetParameters
-              - ssm:GetParametersByPath
-            Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/vestibule/dev
   IOTClientConnectedRule:
     Type: AWS::IoT::TopicRule
     Properties:
