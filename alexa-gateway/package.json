@@ -12,7 +12,7 @@
   "author": "Ray Munian",
   "license": "ISC",
   "repository": {
-    "url": "https://github.com/rym002/vestibule-lambda",
+    "url": "https://github.com/rym002/vestibule-aws",
     "type": "git"
   },
   "devDependencies": {

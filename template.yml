@@ -9,9 +9,9 @@ Metadata:
     LicenseUrl: LICENSE.txt
     ReadmeUrl: README.md
     Labels: ['tests']
-    HomePageUrl: https://github.com/rym002/vestibule-lambda
+    HomePageUrl: https://github.com/rym002/vestibule-aws
     SemanticVersion: 0.0.1
-    SourceCodeUrl: https://github.com/rym002/vestibule-lambda
+    SourceCodeUrl: https://github.com/rym002/vestibule-aws
 Parameters:
   VideoSkillId:
     Description: Alexa Video Skill Id
