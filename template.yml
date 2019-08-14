@@ -152,10 +152,13 @@ Resources:
           -
             Effect: Allow
             Action: 
-              - ssm:GetParameters
-              - ssm:GetParametersByPath
               - ssm:GetParameter
-            Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter//vestibule/dev
+              - ssm:GetParametersByPath
+            Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/vestibule/dev
+          -
+            Effect: Allow
+            Action: kms:Decrypt
+            Resource: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*
   VestibuleClientPolicy:
     Type: AWS::IoT::Policy
     Properties:
