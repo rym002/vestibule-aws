@@ -154,6 +154,7 @@ Resources:
             Action: 
               - ssm:GetParameters
               - ssm:GetParametersByPath
+              - ssm:GetParameter
             Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter//vestibule/dev
   VestibuleClientPolicy:
     Type: AWS::IoT::Policy
