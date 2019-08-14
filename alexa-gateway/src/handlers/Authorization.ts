@@ -58,7 +58,7 @@ type ErrorCodeType = 'invalid_request'
 
 interface TokenKey {
     [key: string]: DynamoDB.AttributeValue
-    client_id: {
+    user_id: {
         S: DynamoDB.StringAttributeValue
     }
 }
@@ -72,8 +72,8 @@ interface TTLTokenRecord extends TokenRecord {
         N: DynamoDB.NumberAttributeValue
     }
 }
-const AUTH_TOKEN_TABLE = 'vestibule_auth_tokens';
-const REFRESH_TOKEN_TABLE = 'vestibule_refresh_tokens';
+const AUTH_TOKEN_TABLE = process.env['auth_token_table'] || 'vestibule_auth_tokens';
+const REFRESH_TOKEN_TABLE = process.env['refresh_token_table'] || 'vestibule_refresh_tokens';
 
 const lwaAxios = axios.create({
     httpsAgent: new Agent(
@@ -146,7 +146,7 @@ class Handler implements DirectiveHandler<DirectiveNamespace>{
 
     private convertToRefreshToken(tokenResponse: DeviceTokenResponse, clientId: string): TokenRecord {
         return {
-            client_id: {
+            user_id: {
                 S: clientId
             },
             token: {
@@ -156,7 +156,7 @@ class Handler implements DirectiveHandler<DirectiveNamespace>{
     }
     private convertToAccessToken(tokenResponse: DeviceTokenResponse, clientId: string): TTLTokenRecord {
         return {
-            client_id: {
+            user_id: {
                 S: clientId
             },
             token: {
@@ -256,7 +256,7 @@ class Handler implements DirectiveHandler<DirectiveNamespace>{
     }
     private getTokenKey(userSub: string): TokenKey {
         return {
-            client_id: {
+            user_id: {
                 S: userSub
             }
         }

@@ -125,7 +125,7 @@ describe('Authorization', function (){
                         {
                             PutRequest: {
                                 Item: {
-                                    client_id: {
+                                    user_id: {
                                         S: vestibuleClientId
                                     },
                                     token: {
@@ -142,7 +142,7 @@ describe('Authorization', function (){
                         {
                             PutRequest: {
                                 Item: {
-                                    client_id: {
+                                    user_id: {
                                         S: vestibuleClientId
                                     },
                                     token: {
@@ -204,9 +204,9 @@ describe('Authorization', function (){
         function mockGetItem(){
             return  mockAwsWithSpy<DynamoDB.Types.GetItemInput, DynamoDB.Types.GetItemOutput>('DynamoDB', 'getItem', (req) => {
                 let retId;
-                if (req.Key.client_id.S == vestibuleClientId + 'auth' && req.TableName == 'vestibule_auth_tokens') {
+                if (req.Key.user_id.S == vestibuleClientId + 'auth' && req.TableName == 'vestibule_auth_tokens') {
                     retId = successResponse.access_token;
-                } else if (req.Key.client_id.S == vestibuleClientId + 'refresh' && req.TableName == 'vestibule_refresh_tokens') {
+                } else if (req.Key.user_id.S == vestibuleClientId + 'refresh' && req.TableName == 'vestibule_refresh_tokens') {
                     retId = successResponse.refresh_token
                 }
                 return {

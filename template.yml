@@ -1,8 +1,9 @@
 Transform: 'AWS::Serverless-2016-10-31'
+Description: 'Vestibule AWS Stack'
 Metadata:
   AWS::ServerlessRepo::Application:
-    Name: vestibule-lambda
-    Description: Lambda for vestibule
+    Name: vestibule
+    Description: Vestibule application
     Author: Ray Munian
     SpdxLicenseId: Apache-2.0
     LicenseUrl: LICENSE.txt
@@ -11,8 +12,16 @@ Metadata:
     HomePageUrl: https://github.com/rym002/vestibule-lambda
     SemanticVersion: 0.0.1
     SourceCodeUrl: https://github.com/rym002/vestibule-lambda
+Parameters:
+  VideoSkillId:
+    Description: Alexa Video Skill Id
+    Type: AWS::SSM::Parameter::Value<String>
+Outputs:
+  AlexaGatewayId:
+    Description: ID of the AlexaGateway
+    Value: !GetAtt AlexaGateway.Arn
 Resources:
-  AlexaVestibuleGateway:
+  AlexaGateway:
     Type: 'AWS::Serverless::Function'
     Properties:
       CodeUri: alexa-gateway/
@@ -20,3 +29,219 @@ Resources:
       Runtime: nodejs10.x
       Description: 'Vestibule Alexa Gateway'
       Timeout: 50
+      Role: !GetAtt AlexaGatewayRole.Arn
+      Environment:
+        Variables:
+          refresh_token_table: !Select [1, !Split [ "/", !GetAtt RefreshTokensTable.Arn]]
+          auth_token_table: !Select [1, !Split [ "/", !GetAtt AuthTokensTable.Arn]]
+  AlexaGatewayInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt AlexaGateway.Arn
+      Action: lambda:InvokeFunction
+      EventSourceToken: !Ref VideoSkillId
+      Principal: alexa-connectedhome.amazon.com
+  AuthTokensTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      AttributeDefinitions:
+        -
+          AttributeName: user_id
+          AttributeType: S
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      KeySchema:
+        - 
+          AttributeName: user_id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+  RefreshTokensTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      AttributeDefinitions:
+        -
+          AttributeName: user_id
+          AttributeType: S
+      KeySchema:
+        - 
+          AttributeName: user_id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+  AlexaGatewayRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+  AlexaGatewayPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      Roles:
+        - !Ref AlexaGatewayRole
+      PolicyName: AlexaGatewayPolicy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:BatchWriteItem
+              - dynamodb:PutItem
+              - dynamodb:GetItem
+            Resource:
+              - !GetAtt AuthTokensTable.Arn
+              - !GetAtt RefreshTokensTable.Arn
+          -
+            Effect: Allow
+            Action:
+              - iot:Connect
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:client/vestibule-gateway-*
+          -
+            Effect: Allow
+            Action:
+              - iot:Subscribe
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/$aws/things/vestibule-bridge-*/shadow/update/accepted
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/vestibule-bridge/vestibule-bridge-*/alexa/event/*
+          -
+            Effect: Allow
+            Action:
+              - iot:Receive
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/vestibule-bridge/vestibule-bridge-*/alexa/event/*
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/vestibule-bridge-*/shadow/update/accepted
+          -
+            Effect: Allow
+            Action:
+              - iot:Publish
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/vestibule-bridge/vestibule-bridge-*/alexa/directive/*
+          -
+            Effect: Allow
+            Action:
+              - iot:GetThingShadow
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:thing/vestibule-bridge-*
+          -
+            Effect: Allow
+            Action:
+              - iot:UpdateThingShadow
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:thing/vestibule-bridge-*
+          -
+            Effect: Allow
+            Action:
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource:
+              - arn:aws:logs:*:*:log-group:*
+  VestibuleClientPolicy:
+    Type: AWS::IoT::Policy
+    Properties:
+      PolicyName: VestibuleClientPolicy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Action: iot:Subscribe
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/${!iot:Connection.Thing.ThingTypeName}/${!iot:Connection.Thing.ThingName}/alexa/directive/*
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/get/*
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/update/*
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/delete/*
+          -
+            Effect: Allow
+            Action: iot:Receive
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${!iot:Connection.Thing.ThingTypeName}/${!iot:Connection.Thing.ThingName}/alexa/directive/*
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/update/*
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/get/*
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/delete/*
+          -
+            Effect: Allow
+            Action: iot:Publish
+            Resource:
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${!iot:Connection.Thing.ThingTypeName}/${!iot:Connection.Thing.ThingName}/alexa/event/*
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/update
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/get
+          -
+            Effect: Allow
+            Action: 
+              - iot:GetThingShadow
+              - iot:UpdateThingShadow
+            Resource: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:thing/${!iot:Connection.Thing.ThingName}
+          -
+            Effect: Allow
+            Action: iot:Connect
+            Resource: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:client/vestibule-bridge-*
+  IOTClientConnectedRule:
+    Type: AWS::IoT::TopicRule
+    Properties:
+      RuleName: VestibuleClientConnected
+      TopicRulePayload:
+        Actions:
+          -
+            Republish:
+              RoleArn: !GetAtt VestibuleIotRuleRole.Arn
+              Topic: $$aws/things/${clientId}/shadow/update
+        Description: Update thing shadow connected value
+        RuleDisabled: true
+        AwsIotSqlVersion: 2016-03-23
+        Sql: >-
+          select { 
+            'state': { 
+              'desired':null, 
+              'reported':{ 
+                'endpoints':null, 
+                'connected': 
+                  CASE eventType 
+                    WHEN 'connected' 
+                      THEN true 
+                    ELSE false
+                  END 
+                } 
+              } 
+            } 
+            FROM '$aws/events/presence/+/+' 
+            WHERE startswith(clientId,"vestibule-bridge-")
+  VestibuleIotRuleRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - iot.amazonaws.com
+            Action:
+              - sts:AssumeRole
+  VestibuleIotRulePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      Roles:
+        - !Ref VestibuleIotRuleRole
+      PolicyName: VestibuleIotRulePolicy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Action: iot:Publish
+            Resource: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/vestibule-bridge-*/shadow/update
