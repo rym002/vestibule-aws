@@ -1,7 +1,7 @@
 # alexa-gateway
 Lambda function for vestibule used for skill interaction
 
-![Build Status](https://codebuild.us-east-1.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiYVRpZmx4RWJud2VCUkw5d1BOd1BoS3hsY0pEV0pROFRxZFV1R0dhcmc5S3dUcVhCNzNPQWdwREo3bkRCeVVmNGVGWDgvZXNXalhVL1NvQzZFT3dZaSs0PSIsIml2UGFyYW1ldGVyU3BlYyI6IjZzMTFJWmNWNWVqSWdtaU8iLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=master)
+![Build Status](https://codebuild.us-east-1.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiYWg0cTRRVTZlQXdoQXRxbFUrd1RjRGlMbXJKZ0p1b09KMG1rb0pYNTZvQ3NidFoyRVRXU2dVblZxSmtkT3dBbnMwbjlVUFVQNlVnVEdyYllEWTBzMWNZPSIsIml2UGFyYW1ldGVyU3BlYyI6ImtVdWtQWVNhWU4weitzTEEiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=master)
 
 ## Supports routing Alexa Video Skills commands using IOT
 ### Supports
