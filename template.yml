@@ -154,7 +154,12 @@ Resources:
             Resource:
               - !Sub 
                 - arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${FunctionName}
-                - { FunctionName: !Select [6, !Split [ ":", !GetAtt AlexaGateway.Arn]] }
+                - FunctionName:
+                  Fn::Select:
+                    - 6
+                    - Fn::Split
+                      - ":"
+                      - !GetAtt AlexaGateway.Arn
           -
             Effect: Allow
             Action:
