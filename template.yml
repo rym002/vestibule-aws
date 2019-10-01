@@ -273,6 +273,7 @@ Resources:
   AlexaGatewayLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: /aws/lambda/vestibule-stack-AlexaGateway1
+      LogGroupName: !Sub
+        - /aws/lambda/${AWS::StackName}-AlexaGateway1
       RetentionInDays: 7
  
