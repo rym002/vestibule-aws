@@ -216,10 +216,7 @@ Resources:
   IOTClientConnectedRule:
     Type: AWS::IoT::TopicRule
     Properties:
-      RuleName: 
-        - !Sub
-          - ${StackName}_ClientConnected
-          - { StackName: !Join ["_", !Split [ "-", !Ref AWS::StackName]] }
+      RuleName: Vestibule_ClientConnected
       TopicRulePayload:
         Actions:
           -
