@@ -273,9 +273,6 @@ Resources:
   AlexaGatewayLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: 
-        - !Sub
-          - /aws/lambda/${FunctionName}
-          - { FunctionName: !Select [6, !Split [ ":", !GetAtt AlexaGateway.Arn]] }
+      LogGroupName: /aws/lambda/vestibule-stack-AlexaGateway1
       RetentionInDays: 7
  
