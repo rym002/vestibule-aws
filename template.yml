@@ -27,7 +27,7 @@ Resources:
       CodeUri: alexa-gateway/
       Handler: dist/handler.handler
       Runtime: nodejs10.x
-      FunctionName: VestibuleAlexaGateway
+      FunctionName: !Sub {AWS::StackName}-AlexaGateway
       Description: 'Vestibule Alexa Gateway'
       Timeout: 50
       Role: !GetAtt AlexaGatewayRole.Arn
@@ -45,7 +45,7 @@ Resources:
   AuthTokensTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
-      TableName: VestibuleAuthTokens
+      TableName: !Sub {AWS::StackName}-AuthTokens
       AttributeDefinitions:
         -
           AttributeName: user_id
@@ -63,7 +63,7 @@ Resources:
   RefreshTokensTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
-      TableName: VestibuleRefreshTokens
+      TableName: !Sub {AWS::StackName}-RefreshTokens
       AttributeDefinitions:
         -
           AttributeName: user_id
@@ -78,6 +78,7 @@ Resources:
   AlexaGatewayRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: !Sub {AWS::StackName}-AlexaGatewayRole
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -93,7 +94,7 @@ Resources:
     Properties:
       Roles:
         - !Ref AlexaGatewayRole
-      PolicyName: AlexaGatewayPolicy
+      PolicyName: !Sub {AWS::StackName}-AlexaGatewayPolicy
       PolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -148,12 +149,6 @@ Resources:
           -
             Effect: Allow
             Action:
-              - logs:CreateLogGroup
-            Resource:
-              - "*"
-          -
-            Effect: Allow
-            Action:
               - logs:CreateLogStream
               - logs:PutLogEvents
             Resource:
@@ -181,6 +176,7 @@ Resources:
   VestibuleClientPolicy:
     Type: AWS::IoT::Policy
     Properties:
+      PolicyName: !Sub {AWS::StackName}-ClientPolicy
       PolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -220,7 +216,7 @@ Resources:
   IOTClientConnectedRule:
     Type: AWS::IoT::TopicRule
     Properties:
-      RuleName: VestibuleClientConnected
+      RuleName: !Sub {AWS::StackName}-ClientConnected
       TopicRulePayload:
         Actions:
           -
@@ -250,6 +246,7 @@ Resources:
   VestibuleIotRuleRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: !Sub {AWS::StackName}-IotRuleRole
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -265,7 +262,7 @@ Resources:
     Properties:
       Roles:
         - !Ref VestibuleIotRuleRole
-      PolicyName: VestibuleIotRulePolicy
+      PolicyName: !Sub {AWS::StackName}-IotRulePolicy
       PolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -273,3 +270,11 @@ Resources:
             Effect: Allow
             Action: iot:Publish
             Resource: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/vestibule-bridge-*/shadow/update
+  AlexaGatewayLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: 
+        - !Sub
+          - /aws/lambda/${FunctionName}
+          - { FunctionName: !Select [6, !Split [ ":", !GetAtt AlexaGateway.Arn]] }
+ 
