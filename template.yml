@@ -159,7 +159,7 @@ Resources:
             Resource:
               - !Sub 
                 - arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${FunctionName}
-                - { FunctionName: !Select [7, !Split [ ":", !GetAtt AlexaGateway.Arn]] }
+                - { FunctionName: !Select [6, !Split [ ":", !GetAtt AlexaGateway.Arn]] }
           -
             Effect: Allow
             Action:
@@ -167,7 +167,7 @@ Resources:
             Resource:
               - !Sub
                 - arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${FunctionName}:log-stream:*
-                - { FunctionName: !Select [7, !Split [ ":", !GetAtt AlexaGateway.Arn]] }
+                - { FunctionName: !Select [6, !Split [ ":", !GetAtt AlexaGateway.Arn]] }
           -
             Effect: Allow
             Action: 
