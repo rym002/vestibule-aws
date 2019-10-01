@@ -27,6 +27,7 @@ Resources:
       CodeUri: alexa-gateway/
       Handler: dist/handler.handler
       Runtime: nodejs10.x
+      FunctionName: VestibuleAlexaGateway
       Description: 'Vestibule Alexa Gateway'
       Timeout: 50
       Role: !GetAtt AlexaGatewayRole.Arn
@@ -44,6 +45,7 @@ Resources:
   AuthTokensTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
+      TableName: VestibuleAuthTokens
       AttributeDefinitions:
         -
           AttributeName: user_id
@@ -61,6 +63,7 @@ Resources:
   RefreshTokensTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
+      TableName: VestibuleRefreshTokens
       AttributeDefinitions:
         -
           AttributeName: user_id
@@ -209,7 +212,7 @@ Resources:
               RoleArn: !GetAtt VestibuleIotRuleRole.Arn
               Topic: $$aws/things/${clientId}/shadow/update
         Description: Update thing shadow connected value
-        RuleDisabled: true
+        RuleDisabled: false
         AwsIotSqlVersion: 2016-03-23
         Sql: >-
           select { 
