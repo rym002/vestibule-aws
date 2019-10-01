@@ -154,6 +154,12 @@ Resources:
               - arn:aws:logs:*:*:log-group:*
           -
             Effect: Allow
+            Action:
+              - logs:PutLogEvents
+            Resource:
+              - arn:aws:logs:*:*:log-group:*:*:*
+          -
+            Effect: Allow
             Action: 
               - ssm:GetParameter
               - ssm:GetParametersByPath
