@@ -273,7 +273,6 @@ Resources:
   AlexaGatewayLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub
-        - /aws/lambda/${AWS::StackName}-AlexaGateway1
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}-AlexaGateway1
       RetentionInDays: 7
  
