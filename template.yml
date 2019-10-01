@@ -157,13 +157,13 @@ Resources:
               - logs:CreateLogStream
               - logs:PutLogEvents
             Resource:
-              - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${Fn::GetAtt:[AlexaGateway,FunctionName]}
+              - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/$(Fn::GetAtt:[AlexaGateway,FunctionName])
           -
             Effect: Allow
             Action:
               - logs:PutLogEvents
             Resource:
-              - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${Fn::GetAtt:[AlexaGateway,FunctionName]}:log-stream:*
+              - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/$(Fn::GetAtt:[AlexaGateway,FunctionName]):log-stream:*
           -
             Effect: Allow
             Action: 
