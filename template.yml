@@ -154,14 +154,7 @@ Resources:
             Resource:
               - !Sub 
                 - arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${FunctionName}
-                - FunctionName:
-                  Fn::Select:
-                    - 6
-                    - Fn::Split:
-                      - ':'
-                      - Fn::GetAtt:
-                        - AlexaGateway
-                        - Arn
+                - { FunctionName: !Select [6, !Split [ ":", !GetAtt AlexaGateway.Arn]] }
           -
             Effect: Allow
             Action:
@@ -280,6 +273,9 @@ Resources:
   AlexaGatewayLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/lambda/${AWS::StackName}-AlexaGateway1
+      LogGroupName: 
+        !Sub
+        - /aws/lambda/${FunctionName}
+        - { FunctionName: !Select [6, !Split [ ":", !GetAtt AlexaGateway.Arn]] }
       RetentionInDays: 7
  
