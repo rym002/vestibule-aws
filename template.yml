@@ -176,7 +176,6 @@ Resources:
   VestibuleClientPolicy:
     Type: AWS::IoT::Policy
     Properties:
-      PolicyName: !Sub ${AWS::StackName}-ClientPolicy
       PolicyDocument:
         Version: 2012-10-17
         Statement:
