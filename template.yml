@@ -157,7 +157,11 @@ Resources:
                 - FunctionName:
                   Fn::Select:
                     - 6
-                    - Fn::Split [ ":", !GetAtt AlexaGateway.Arn]]
+                    - Fn::Split:
+                      - ':'
+                      - Fn::GetAtt:
+                        - AlexaGateway
+                        - Arn
           -
             Effect: Allow
             Action:
