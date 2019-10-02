@@ -45,6 +45,7 @@ class AsyncHandler implements TopicHandler {
         try {
             const topicPrefix = this.getTopicPrefix();
             const requestTopic = this.getTopic(topicPrefix, message);
+            console.log('requestTopic %s', requestTopic)
             const reqMessage = this.createRequestMessage(topicPrefix, message);
             const iotData = await getIotData();
             const data = await iotData.publish({
