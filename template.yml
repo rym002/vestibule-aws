@@ -219,7 +219,7 @@ Resources:
       RuleName:
         !Sub
         - ${StackName}_ClientConnected
-        - { StackName: !Join ["_", !Split [ ":", !Ref "AWS::StackName"]] }
+        - { StackName: !Join ["_", !Split [ "-", !Ref "AWS::StackName"]] }
       TopicRulePayload:
         Actions:
           -
