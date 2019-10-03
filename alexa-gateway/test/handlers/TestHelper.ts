@@ -2,11 +2,13 @@ import { Event, Message, Directive, Alexa } from '@vestibule-link/alexa-video-sk
 import { EndpointState, ErrorHolder, generateEndpointId, SubType, EndpointCapability } from "@vestibule-link/iot-types";
 import { expect } from 'chai';
 import { generateValidScope } from "../mock/CognitoMock";
-import { localEndpoint, messageId, vestibuleClientId } from "../mock/IotDataMock";
+import { localEndpoint, messageId, vestibuleClientId, mockIotDataPublish } from "../mock/IotDataMock";
 import { handler } from '../../src/handler';
 import { fakeCallback, FakeContext } from '../mock/LambdaMock';
 import { directiveMocks, mockEndpointState } from '../mock/DirectiveMocks';
-import { SSM } from 'aws-sdk';
+import { SSM, IotData } from 'aws-sdk';
+import { SinonSandbox } from 'sinon';
+import { MockMqttOperations, mockMqtt } from '../mock/MqttMock';
 
 interface SharedStates {
     playback: {
@@ -64,15 +66,15 @@ export const sharedStates: SharedStates = {
             }
         }
     },
-    record:{
-        recording:{
-            'Alexa.RecordController':{
-                RecordingState:'RECORDING'
+    record: {
+        recording: {
+            'Alexa.RecordController': {
+                RecordingState: 'RECORDING'
             }
         },
-        not_recording:{
-            'Alexa.RecordController':{
-                RecordingState:'NOT_RECORDING'
+        not_recording: {
+            'Alexa.RecordController': {
+                RecordingState: 'NOT_RECORDING'
             }
         }
     }
@@ -169,11 +171,11 @@ export const errors: SharedErrors = {
             type: 'VALUE_OUT_OF_RANGE'
         }
     },
-    videoError:{
-        errorType:'Alexa.Video',
-        errorPayload:{
-            type:'STORAGE_FULL',
-            message:'Mock Error'
+    videoError: {
+        errorType: 'Alexa.Video',
+        errorPayload: {
+            type: 'STORAGE_FULL',
+            message: 'Mock Error'
         }
     }
 }
@@ -268,7 +270,7 @@ export function verifySuccessResponse(event: Event.Message, eventContext: EventM
         .to.have.property('properties');
 }
 
-export function emptyParameters(path:string):SSM.Parameter[]{
+export function emptyParameters(path: string): SSM.Parameter[] {
     return []
 }
 export async function setupDisconnectedBridge(capabilities: EndpointCapability) {
@@ -298,4 +300,12 @@ export async function setupNotPlayingContent(capabilities: EndpointCapability) {
 export async function setupWatchingTv(capabilities: EndpointCapability) {
     await directiveMocks(emptyParameters);
     mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing, ...sharedStates.channel }, capabilities, localEndpoint, true, vestibuleClientId);
+}
+
+export function setupMqttMock(subscribeHandler: (topic: string | string[], mqttMock: MockMqttOperations) => void, sandbox: SinonSandbox, messageContext: DirectiveMessageContext) {
+    mockMqtt(sandbox, subscribeHandler)
+    mockIotDataPublish((params: IotData.PublishRequest) => {
+        expect(params.topic).to.eql('vestibule-bridge/vestibule-bridge-' + vestibuleClientId + '/alexa/directive/' + localEndpoint.provider + '/' + localEndpoint.host + '/' + messageContext.header.namespace + '/' + messageContext.header.name)
+        return {}
+    })
 }

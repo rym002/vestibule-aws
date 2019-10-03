@@ -34,7 +34,7 @@ class Handler extends DefaultNotStoppedHandler<DirectiveNamespace> {
             return {};
         } else {
             return {
-                request: message.payload,
+                request: message,
                 sync: true
             }
         }

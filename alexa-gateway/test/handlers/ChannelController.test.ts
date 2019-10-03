@@ -1,11 +1,11 @@
 import { ChannelController } from '@vestibule-link/alexa-video-skill-types';
 import { EndpointCapability, ResponseMessage } from '@vestibule-link/iot-types';
 import 'mocha';
-import * as mqtt from 'mqtt';
-import { createSandbox, SinonSpy } from 'sinon';
+import { createSandbox } from 'sinon';
 import { resetDirectiveMocks } from '../mock/DirectiveMocks';
-import { mockMqtt } from '../mock/MqttMock';
-import { DirectiveMessageContext, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupNotWatchingTv, setupPoweredOff, setupWatchingTv, sharedStates, testDisconnectedBridge, testInvalidEndpoint, testMockErrorResponse, testNotWatchingTvEndpoint, testPoweredOffEndpoint, testSuccessfulMessage } from './TestHelper';
+import { resetIotDataPublish } from '../mock/IotDataMock';
+import { MockMqttOperations } from '../mock/MqttMock';
+import { DirectiveMessageContext, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupMqttMock, setupNotWatchingTv, setupPoweredOff, setupWatchingTv, sharedStates, testDisconnectedBridge, testInvalidEndpoint, testMockErrorResponse, testNotWatchingTvEndpoint, testPoweredOffEndpoint, testSuccessfulMessage } from './TestHelper';
 
 describe('ChannelController', function () {
     const skipChannelsHeader = {
@@ -61,32 +61,30 @@ describe('ChannelController', function () {
 
     context(('connected bridge'), function () {
         const sandbox = createSandbox()
-        beforeEach(function () {
-            mockMqtt((topic, mqttMock) => {
-                let resp: ResponseMessage<any> | undefined;
-                const channelTopic = generateReplyTopicName(changeChannelMessageSuffix);
-                const skipTopic = generateReplyTopicName(skipChannelsMessageSuffix);
-                if (topic == channelTopic
-                    || topic == skipTopic) {
-                    resp = {
-                        payload: {},
-                        stateChange: {
-                            'Alexa.ChannelController': changeChannelRequest
-                        },
-                        error: false
-                    }
-                } else if (topic == generateReplyTopicName(mockErrorSuffix)) {
-                    resp = {
-                        payload: errors.bridgeError,
-                        error: true
-                    }
+        const responseMockHandler = (topic: string | string[], mqttMock: MockMqttOperations) => {
+            let resp: ResponseMessage<any> | undefined;
+            const channelTopic = generateReplyTopicName(changeChannelMessageSuffix);
+            const skipTopic = generateReplyTopicName(skipChannelsMessageSuffix);
+            if (topic == channelTopic
+                || topic == skipTopic) {
+                resp = {
+                    payload: {},
+                    stateChange: {
+                        'Alexa.ChannelController': changeChannelRequest
+                    },
+                    error: false
+                }
+            } else if (topic == generateReplyTopicName(mockErrorSuffix)) {
+                resp = {
+                    payload: errors.bridgeError,
+                    error: true
+                }
 
-                }
-                if (resp && 'string' == typeof topic) {
-                    mqttMock.sendMessage(topic, resp);
-                }
-            }, sandbox)
-        })
+            }
+            if (resp && 'string' == typeof topic) {
+                mqttMock.sendMessage(topic, resp);
+            }
+        }
         afterEach(function () {
             sandbox.restore()
         })
@@ -100,20 +98,29 @@ describe('ChannelController', function () {
             })
             context('SkipChannels', function () {
                 const messageContext = skipChannelsContext;
+                beforeEach(function (){
+                    setupMqttMock(responseMockHandler,sandbox,messageContext)
+                })
+                afterEach(function (){
+                    resetIotDataPublish()
+                })
                 it('should send a request to change channel', async function () {
                     await testSuccessfulMessage(messageContext, eventContext)
-                    sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
                 })
                 it('should map an error', async function () {
                     await testMockErrorResponse({ ...messageContext, messageSuffix: mockErrorSuffix });
-                    sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
                 })
             })
             context('ChangeChannel', function () {
                 const messageContext = changeChannelContext;
+                beforeEach(function (){
+                    setupMqttMock(responseMockHandler,sandbox,messageContext)
+                })
+                afterEach(function (){
+                    resetIotDataPublish()
+                })
                 it('should change channel if not on the current channel', async function () {
                     await testSuccessfulMessage(messageContext, eventContext)
-                    sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
                 })
                 it('should return success if its on the same channel', async function () {
                     await testSuccessfulMessage({
@@ -122,11 +129,9 @@ describe('ChannelController', function () {
                             channel: sharedStates.channel['Alexa.ChannelController']!.channel!
                         }
                     }, eventContext)
-                    sandbox.assert.notCalled(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
                 })
                 it('should map an error', async function () {
                     await testMockErrorResponse({ ...messageContext, messageSuffix: mockErrorSuffix });
-                    sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
                 })
             })
         })
@@ -145,9 +150,14 @@ describe('ChannelController', function () {
             })
             context('ChangeChannel', function () {
                 const messageContext = changeChannelContext;
+                beforeEach(function (){
+                    setupMqttMock(responseMockHandler,sandbox,messageContext)
+                })
+                afterEach(function (){
+                    resetIotDataPublish()
+                })
                 it('should send a message', async function () {
                     await testSuccessfulMessage(messageContext, eventContext)
-                    sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
                 })
 
             })

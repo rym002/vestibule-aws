@@ -1,11 +1,11 @@
 import { EndpointCapability, ResponseMessage } from '@vestibule-link/iot-types';
 import 'mocha';
-import * as mqtt from 'mqtt';
 import { createSandbox, SinonSpy } from 'sinon';
 import wolHandler from '../../src/handlers/WOL';
 import { resetDirectiveMocks } from '../mock/DirectiveMocks';
-import { mockMqtt } from '../mock/MqttMock';
-import { callHandler, DirectiveMessageContext, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupNotPlayingContent, setupPoweredOff, testMockErrorResponse, testSuccessfulMessage, verifyErrorResponse } from './TestHelper';
+import { resetIotDataPublish } from '../mock/IotDataMock';
+import { MockMqttOperations } from '../mock/MqttMock';
+import { callHandler, DirectiveMessageContext, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupMqttMock, setupNotPlayingContent, setupPoweredOff, testMockErrorResponse, testSuccessfulMessage, verifyErrorResponse } from './TestHelper';
 
 describe('PowerController', function () {
     const capabilities: EndpointCapability = {
@@ -104,44 +104,44 @@ describe('PowerController', function () {
         })
         context('powerState ON', function () {
             const sandbox = createSandbox()
-            before(function () {
-                mockMqtt((topic, mqttMock) => {
-                    let resp: ResponseMessage<any> | undefined;
-                    switch (topic) {
-                        case generateReplyTopicName('TurnOff'):
-                            resp = {
-                                payload: {},
-                                error: false
-                            }
-                            break;
-                        case generateReplyTopicName(mockErrorSuffix):
-                            resp = {
-                                payload: errors.bridgeError,
-                                error: true
-                            }
-                            break;
-                    }
-                    if (resp && 'string' == typeof topic) {
-                        mqttMock.sendMessage(topic, resp);
-                    }
-                }, sandbox)
-            })
+            const responseMockHandler = (topic: string | string[], mqttMock: MockMqttOperations) => {
+                let resp: ResponseMessage<any> | undefined;
+                switch (topic) {
+                    case generateReplyTopicName('TurnOff'):
+                        resp = {
+                            payload: {},
+                            error: false
+                        }
+                        break;
+                    case generateReplyTopicName(mockErrorSuffix):
+                        resp = {
+                            payload: errors.bridgeError,
+                            error: true
+                        }
+                        break;
+                }
+                if (resp && 'string' == typeof topic) {
+                    mqttMock.sendMessage(topic, resp);
+                }
+            }
             after(function () {
                 sandbox.restore()
+                resetDirectiveMocks()
             })
             before(async function () {
                 await setupNotPlayingContent(capabilities);
             })
-            after(() => {
-                resetDirectiveMocks()
+            beforeEach(function () {
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
+            })
+            afterEach(function () {
+                resetIotDataPublish()
             })
             it('should send a message', async function () {
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('should map an error', async function () {
                 await testMockErrorResponse({ ...messageContext, messageSuffix: mockErrorSuffix });
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
 
         })

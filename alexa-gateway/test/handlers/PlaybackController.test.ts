@@ -1,12 +1,11 @@
 import { PlaybackController, PlaybackStateReporter } from '@vestibule-link/alexa-video-skill-types';
 import { EndpointCapability, ResponseMessage } from '@vestibule-link/iot-types';
 import 'mocha';
-import * as mqtt from 'mqtt';
-import { createSandbox, SinonSpy } from 'sinon';
+import { createSandbox } from 'sinon';
 import { directiveMocks, mockEndpointState, resetDirectiveMocks } from '../mock/DirectiveMocks';
-import { localEndpoint, vestibuleClientId } from '../mock/IotDataMock';
-import { mockMqtt } from '../mock/MqttMock';
-import { DirectiveMessageContext, emptyParameters, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupPoweredOff, sharedStates, testDisconnectedBridge, testInvalidEndpoint, testMockErrorResponse, testPoweredOffEndpoint, testStoppedEndpoint, testSuccessfulMessage } from './TestHelper';
+import { localEndpoint, resetIotDataPublish, vestibuleClientId } from '../mock/IotDataMock';
+import { MockMqttOperations } from '../mock/MqttMock';
+import { DirectiveMessageContext, emptyParameters, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupMqttMock, setupPoweredOff, sharedStates, testDisconnectedBridge, testInvalidEndpoint, testMockErrorResponse, testPoweredOffEndpoint, testStoppedEndpoint, testSuccessfulMessage } from './TestHelper';
 
 describe('PlaybackController', function () {
     const capabilities: EndpointCapability = {
@@ -48,62 +47,61 @@ describe('PlaybackController', function () {
     }
     context(('connected bridge'), function () {
         const sandbox = createSandbox()
-        beforeEach(function () {
-            mockMqtt((topic, mqttMock) => {
-                let resp: ResponseMessage<any> | undefined;
-                switch (topic) {
-                    case generateReplyTopicName('Play'):
-                    case generateReplyTopicName('StartOver'):
-                    case generateReplyTopicName('FastForward'):
-                    case generateReplyTopicName('Next'):
-                    case generateReplyTopicName('Previous'):
-                    case generateReplyTopicName('Rewind'):
-                        resp = {
-                            payload: {},
-                            stateChange: {
-                                'Alexa.PlaybackStateReporter': {
-                                    playbackState: 'PLAYING'
-                                }
-                            },
-                            error: false
-                        }
-                        break;
-                    case generateReplyTopicName('Pause'):
-                        resp = {
-                            payload: {},
-                            stateChange: {
-                                'Alexa.PlaybackStateReporter': {
-                                    playbackState: 'PAUSED'
-                                }
-                            },
-                            error: false
-                        }
-                        break;
-                    case generateReplyTopicName('Stop'):
-                        resp = {
-                            payload: {},
-                            stateChange: {
-                                'Alexa.PlaybackStateReporter': {
-                                    playbackState: 'STOPPED'
-                                }
-                            },
-                            error: false
-                        }
-                        break;
-                    case generateReplyTopicName(mockErrorSuffix):
-                        resp = {
-                            payload: errors.bridgeError,
-                            error: true
-                        }
-                        break;
-                }
-                if (resp && 'string' == typeof topic) {
-                    mqttMock.sendMessage(topic, resp);
-                }
-            }, sandbox)
-        })
+        const responseMockHandler = (topic: string | string[], mqttMock: MockMqttOperations) => {
+            let resp: ResponseMessage<any> | undefined;
+            switch (topic) {
+                case generateReplyTopicName('Play'):
+                case generateReplyTopicName('StartOver'):
+                case generateReplyTopicName('FastForward'):
+                case generateReplyTopicName('Next'):
+                case generateReplyTopicName('Previous'):
+                case generateReplyTopicName('Rewind'):
+                    resp = {
+                        payload: {},
+                        stateChange: {
+                            'Alexa.PlaybackStateReporter': {
+                                playbackState: 'PLAYING'
+                            }
+                        },
+                        error: false
+                    }
+                    break;
+                case generateReplyTopicName('Pause'):
+                    resp = {
+                        payload: {},
+                        stateChange: {
+                            'Alexa.PlaybackStateReporter': {
+                                playbackState: 'PAUSED'
+                            }
+                        },
+                        error: false
+                    }
+                    break;
+                case generateReplyTopicName('Stop'):
+                    resp = {
+                        payload: {},
+                        stateChange: {
+                            'Alexa.PlaybackStateReporter': {
+                                playbackState: 'STOPPED'
+                            }
+                        },
+                        error: false
+                    }
+                    break;
+                case generateReplyTopicName(mockErrorSuffix):
+                    resp = {
+                        payload: errors.bridgeError,
+                        error: true
+                    }
+                    break;
+            }
+            if (resp && 'string' == typeof topic) {
+                mqttMock.sendMessage(topic, resp);
+            }
+        }
         afterEach(function () {
             sandbox.restore()
+            resetIotDataPublish()
         })
 
         context('PLAYING', function () {
@@ -116,56 +114,56 @@ describe('PlaybackController', function () {
             })
             it('Play should not sent a message', async function () {
                 const messageContext = getDirectiveMessageContext('Play');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.notCalled(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('Pause should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Pause');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PAUSED');
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('Stop should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Stop');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('STOPPED');
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('StartOver should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('StartOver');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('FastForward should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('FastForward');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('Next should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Next');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('Previous should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Previous');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('Rewind should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Rewind');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('should map an error', async function () {
                 const messageContext = getDirectiveMessageContext('Rewind');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 await testMockErrorResponse({ ...messageContext, messageSuffix: mockErrorSuffix });
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
         })
 
@@ -179,56 +177,56 @@ describe('PlaybackController', function () {
             })
             it('Play should sent a message', async function () {
                 const messageContext = getDirectiveMessageContext('Play');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('Pause should not send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Pause');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PAUSED');
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.notCalled(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('Stop should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Stop');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('STOPPED');
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('StartOver should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('StartOver');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('FastForward should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('FastForward');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('Next should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Next');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('Previous should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Previous');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('Rewind should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Rewind');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('should map an error', async function () {
                 const messageContext = getDirectiveMessageContext('Rewind');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 await testMockErrorResponse({ ...messageContext, messageSuffix: mockErrorSuffix });
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
 
         })

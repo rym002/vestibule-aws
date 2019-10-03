@@ -43,7 +43,7 @@ class Handler extends DefaultIotEndpointHandler<DirectiveNamespace> implements C
     getEndpointMessageFlags(message: SubType<DirectiveMessage, DirectiveNamespace>, states: EndpointState): MessageHandlingFlags {
         if (message.name == 'TurnOff') {
             return {
-                request: message.payload,
+                request: message,
                 sync: true
             }
         }

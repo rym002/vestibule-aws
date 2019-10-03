@@ -45,7 +45,6 @@ class AsyncHandler implements TopicHandler {
         try {
             const topicPrefix = this.getTopicPrefix();
             const requestTopic = this.getTopic(topicPrefix, message);
-            console.log('requestTopic %s', requestTopic)
             const reqMessage = this.createRequestMessage(topicPrefix, message);
             const iotData = await getIotData();
             const data = await iotData.publish({
@@ -84,10 +83,14 @@ class SyncHandler extends AsyncHandler {
     }
     async sendMessage(message: any): Promise<TopicResponse> {
         return await new Promise(async (resolve, reject) => {
-            const parameters = await getIotParameters();
-            const responseHandler = new IotReponseHandler(this.clientId, this.getReplyTopic(), this.messageId, this.logPrefix, this.createResponse(resolve, reject), parameters)
-            await responseHandler.subscribeResponse(reject);
-            await super.sendMessage(message);
+            try {
+                const parameters = await getIotParameters();
+                const responseHandler = new IotReponseHandler(this.clientId, this.getReplyTopic(), this.messageId, this.logPrefix, this.createResponse(resolve, reject), parameters)
+                await responseHandler.subscribeResponse(reject);
+                await super.sendMessage(message);
+            } catch (err) {
+                reject(err)
+            }
         })
     }
 
@@ -118,7 +121,7 @@ class SyncHandler extends AsyncHandler {
                             reported: {
                                 endpoints: {
                                     [endpointId]: {
-                                        states:metadata
+                                        states: metadata
                                     }
                                 }
                             }

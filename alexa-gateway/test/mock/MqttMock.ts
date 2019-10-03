@@ -55,7 +55,7 @@ class MockMqtt extends EventEmitter implements MockMqttOperations {
     }
 }
 
-export function mockMqtt(subscribeHandler: (topic: string | string[], mqttMock: MockMqttOperations) => void, sandbox: SinonSandbox): void {
+export function mockMqtt(sandbox: SinonSandbox, subscribeHandler: (topic: string | string[], mqttMock: MockMqttOperations) => void, ): void {
     const fakeConnect = function (streamBuilder: (client: MqttClient) => IStream, options: IClientOptions) {
         const mqttMock: MockMqttOperations = new MockMqtt(options);
         mqttMock.on('newListener', (event: string, listener: any) => {

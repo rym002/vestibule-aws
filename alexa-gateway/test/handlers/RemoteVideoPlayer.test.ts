@@ -1,11 +1,11 @@
 import { RemoteVideoPlayer } from '@vestibule-link/alexa-video-skill-types';
 import { EndpointCapability, ResponseMessage } from '@vestibule-link/iot-types';
 import 'mocha';
-import * as mqtt from 'mqtt';
-import { createSandbox, SinonSpy } from 'sinon';
+import { createSandbox } from 'sinon';
 import { resetDirectiveMocks } from '../mock/DirectiveMocks';
-import { mockMqtt } from '../mock/MqttMock';
-import { DirectiveMessageContext, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupNotPlayingContent, setupPoweredOff, testDisconnectedBridge, testInvalidEndpoint, testMockErrorResponse, testPoweredOffEndpoint, testSuccessfulMessage } from './TestHelper';
+import { resetIotDataPublish } from '../mock/IotDataMock';
+import { MockMqttOperations } from '../mock/MqttMock';
+import { DirectiveMessageContext, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupMqttMock, setupNotPlayingContent, setupPoweredOff, testDisconnectedBridge, testInvalidEndpoint, testMockErrorResponse, testPoweredOffEndpoint, testSuccessfulMessage } from './TestHelper';
 
 describe('RemoteVideoPlayer', function () {
     const capabilities: EndpointCapability = {
@@ -43,33 +43,37 @@ describe('RemoteVideoPlayer', function () {
 
     context(('connected bridge'), function () {
         const sandbox = createSandbox()
-        beforeEach(function () {
-            mockMqtt((topic, mqttMock) => {
-                let resp: ResponseMessage<any> | undefined;
-                switch (topic) {
-                    case generateReplyTopicName('SearchAndPlay'):
-                        resp = {
-                            payload: {},
-                            error: false
-                        }
-                        break;
-                    case generateReplyTopicName(mockErrorSuffix):
-                        resp = {
-                            payload: errors.bridgeError,
-                            error: true
-                        }
-                        break;
-                }
-                if (resp && 'string' == typeof topic) {
-                    mqttMock.sendMessage(topic, resp);
-                }
-            }, sandbox)
-        })
+        const responseMockHandler = (topic: string | string[], mqttMock: MockMqttOperations) => {
+            let resp: ResponseMessage<any> | undefined;
+            switch (topic) {
+                case generateReplyTopicName('SearchAndPlay'):
+                    resp = {
+                        payload: {},
+                        error: false
+                    }
+                    break;
+                case generateReplyTopicName(mockErrorSuffix):
+                    resp = {
+                        payload: errors.bridgeError,
+                        error: true
+                    }
+                    break;
+            }
+            if (resp && 'string' == typeof topic) {
+                mqttMock.sendMessage(topic, resp);
+            }
+        }
         afterEach(function () {
             sandbox.restore()
         })
         context('SearchAndPlay', function () {
             const messageContext = defaultMessageContext;
+            beforeEach(function () {
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
+            })
+            afterEach(function () {
+                resetIotDataPublish()
+            })
             before(async function () {
                 await setupNotPlayingContent(capabilities)
             })
@@ -78,11 +82,9 @@ describe('RemoteVideoPlayer', function () {
             })
             it('should send a message', async function () {
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('should map an error', async function () {
                 await testMockErrorResponse({ ...messageContext, messageSuffix: mockErrorSuffix });
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
 
         })

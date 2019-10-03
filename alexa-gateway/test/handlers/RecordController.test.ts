@@ -1,13 +1,11 @@
 import { RecordController } from '@vestibule-link/alexa-video-skill-types';
 import { EndpointCapability, ResponseMessage } from '@vestibule-link/iot-types';
-import { assert } from 'chai';
 import 'mocha';
-import * as mqtt from 'mqtt';
-import { createSandbox, SinonSpy } from 'sinon';
-import { resetDirectiveMocks, directiveMocks, mockEndpointState } from '../mock/DirectiveMocks';
-import { mockMqtt } from '../mock/MqttMock';
-import { DirectiveMessageContext, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupPoweredOff, testDisconnectedBridge, testInvalidEndpoint, testPoweredOffEndpoint, testSuccessfulMessage, testMockErrorResponse, sharedStates, emptyParameters } from './TestHelper';
-import { localEndpoint, vestibuleClientId } from '../mock/IotDataMock';
+import { createSandbox } from 'sinon';
+import { directiveMocks, mockEndpointState, resetDirectiveMocks } from '../mock/DirectiveMocks';
+import { localEndpoint, resetIotDataPublish, vestibuleClientId } from '../mock/IotDataMock';
+import { MockMqttOperations } from '../mock/MqttMock';
+import { DirectiveMessageContext, emptyParameters, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupMqttMock, setupPoweredOff, sharedStates, testDisconnectedBridge, testInvalidEndpoint, testMockErrorResponse, testPoweredOffEndpoint, testSuccessfulMessage } from './TestHelper';
 
 describe('RecordController', function () {
     const capabilities: EndpointCapability = {
@@ -49,99 +47,96 @@ describe('RecordController', function () {
     }
     context(('connected bridge'), function () {
         const sandbox = createSandbox()
-        beforeEach(function () {
-            mockMqtt((topic, mqttMock) => {
-                let resp: ResponseMessage<any> | undefined;
-                switch (topic) {
-                    case generateReplyTopicName('StartRecording'):
-                        resp = {
-                            payload: {},
-                            stateChange: {
-                                'Alexa.RecordController': {
-                                    RecordingState: 'RECORDING'
-                                }
-                            },
-                            error: false
-                        }
-                        break;
-                    case generateReplyTopicName('StopRecording'):
-                        resp = {
-                            payload: {},
-                            stateChange: {
-                                'Alexa.RecordController': {
-                                    RecordingState: 'NOT_RECORDING'
-                                }
-                            },
-                            error: false
-                        }
-                        break;
-                    case generateReplyTopicName(mockErrorSuffix):
-                        resp = {
-                            payload: errors.bridgeError,
-                            error: true
-                        }
-                        break;
-                }
-                if (resp && 'string' == typeof topic) {
-                    mqttMock.sendMessage(topic, resp);
-                }
-            },sandbox)
-        })
+        const responseMockHandler = (topic: string | string[], mqttMock: MockMqttOperations) => {
+            let resp: ResponseMessage<any> | undefined;
+            switch (topic) {
+                case generateReplyTopicName('StartRecording'):
+                    resp = {
+                        payload: {},
+                        stateChange: {
+                            'Alexa.RecordController': {
+                                RecordingState: 'RECORDING'
+                            }
+                        },
+                        error: false
+                    }
+                    break;
+                case generateReplyTopicName('StopRecording'):
+                    resp = {
+                        payload: {},
+                        stateChange: {
+                            'Alexa.RecordController': {
+                                RecordingState: 'NOT_RECORDING'
+                            }
+                        },
+                        error: false
+                    }
+                    break;
+                case generateReplyTopicName(mockErrorSuffix):
+                    resp = {
+                        payload: errors.bridgeError,
+                        error: true
+                    }
+                    break;
+            }
+            if (resp && 'string' == typeof topic) {
+                mqttMock.sendMessage(topic, resp);
+            }
+        }
         afterEach(function () {
             sandbox.restore()
+            resetIotDataPublish();
         })
 
         context('RECORDING', function () {
             before(async function () {
                 await directiveMocks(emptyParameters);
-                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing,...sharedStates.record.recording }, capabilities, localEndpoint, true, vestibuleClientId);
+                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing, ...sharedStates.record.recording }, capabilities, localEndpoint, true, vestibuleClientId);
             })
             after(() => {
                 resetDirectiveMocks()
             })
             it('StartRecording', async function () {
                 const messageContext = getDirectiveMessageContext('StartRecording');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('RECORDING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.notCalled(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('StopRecording', async function () {
                 const messageContext = getDirectiveMessageContext('StopRecording');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('NOT_RECORDING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('should map an error', async function () {
                 const messageContext = getDirectiveMessageContext('StopRecording');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 await testMockErrorResponse({ ...messageContext, messageSuffix: mockErrorSuffix });
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
         })
         context('NOT_RECORDING', function () {
             before(async function () {
                 await directiveMocks(emptyParameters);
-                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing,...sharedStates.record.not_recording }, capabilities, localEndpoint, true, vestibuleClientId);
+                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing, ...sharedStates.record.not_recording }, capabilities, localEndpoint, true, vestibuleClientId);
             })
             after(() => {
                 resetDirectiveMocks()
             })
             it('StartRecording', async function () {
                 const messageContext = getDirectiveMessageContext('StartRecording');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('RECORDING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('StopRecording', async function () {
                 const messageContext = getDirectiveMessageContext('StopRecording');
                 const eventContext = getEventMessageContent('NOT_RECORDING');
                 await testSuccessfulMessage(messageContext, eventContext)
-                sandbox.assert.notCalled(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
-
             })
             it('should map an error', async function () {
                 const messageContext = getDirectiveMessageContext('StartRecording');
+                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 await testMockErrorResponse({ ...messageContext, messageSuffix: mockErrorSuffix });
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
 
         })

@@ -52,7 +52,7 @@ class Handler extends DefaultNotStoppedHandler<DirectiveNamespace> implements Co
             return {}
         } else {
             return {
-                request: message.payload,
+                request: message,
                 sync: true
             }
 

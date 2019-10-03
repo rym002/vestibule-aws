@@ -29,28 +29,33 @@ class Handler extends DefaultEndpointOnHandler<DirectiveNamespace> implements Co
     getEndpointMessageFlags(message: SubType<DirectiveMessage, DirectiveNamespace>, states: EndpointState): MessageHandlingFlags {
         const channelStates = states[namespace];
         const channelState = channelStates ? channelStates.channel : undefined;
-        let requestPayload: ChannelController.ChangeChannelRequest | ChannelController.SkipChannelsRequest | undefined = message.payload;
+        let sendMessage = true
         if (message.name == 'ChangeChannel') {
             const metadata = message.payload.channelMetadata;
             const hasMetadata = metadata && metadata.name
             if (!hasMetadata && channelState) {
                 if (message.payload.channel) {
-                    requestPayload = undefined;
+                    sendMessage = false
                     const requestedChannel = message.payload.channel;
 
                     if (
                         (requestedChannel.number != undefined && requestedChannel.number != channelState.number)
                         || (requestedChannel.callSign != undefined && requestedChannel.callSign != channelState.callSign)
                         || (requestedChannel.affiliateCallSign != undefined && requestedChannel.affiliateCallSign != channelState.affiliateCallSign)
-                    )
-                    requestPayload = message.payload;
+                    ) {
+                        sendMessage = true
+                    }
                 }
             }
         }
 
-        return {
-            request: requestPayload,
-            sync: true
+        if (sendMessage) {
+            return {
+                request: message,
+                sync: true
+            }
+        } else {
+            return {}
         }
     }
     getCapability(capabilities: NonNullable<SubType<EndpointCapability, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {

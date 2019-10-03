@@ -2,12 +2,11 @@ import { SeekController } from '@vestibule-link/alexa-video-skill-types';
 import { EndpointCapability, ResponseMessage } from '@vestibule-link/iot-types';
 import { expect } from 'chai';
 import 'mocha';
-import * as mqtt from 'mqtt';
-import { createSandbox, SinonSpy } from 'sinon';
+import { createSandbox } from 'sinon';
 import { directiveMocks, mockEndpointState, resetDirectiveMocks } from '../mock/DirectiveMocks';
-import { localEndpoint, vestibuleClientId } from '../mock/IotDataMock';
-import { mockMqtt } from '../mock/MqttMock';
-import { callHandler, DirectiveMessageContext, emptyParameters, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupPoweredOff, sharedStates, testDisconnectedBridge, testInvalidEndpoint, testMockErrorResponse, testPoweredOffEndpoint } from './TestHelper';
+import { localEndpoint, resetIotDataPublish, vestibuleClientId } from '../mock/IotDataMock';
+import { MockMqttOperations } from '../mock/MqttMock';
+import { callHandler, DirectiveMessageContext, emptyParameters, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupMqttMock, setupPoweredOff, sharedStates, testDisconnectedBridge, testInvalidEndpoint, testMockErrorResponse, testPoweredOffEndpoint } from './TestHelper';
 
 describe('SeekController', function () {
     const capabilities: EndpointCapability = {
@@ -39,28 +38,26 @@ describe('SeekController', function () {
     }
     context(('connected bridge'), function () {
         const sandbox = createSandbox()
-        beforeEach(function () {
-            mockMqtt((topic, mqttMock) => {
-                let resp: ResponseMessage<any> | undefined;
-                switch (topic) {
-                    case generateReplyTopicName('AdjustSeekPosition'):
-                        resp = {
-                            payload: eventContext.response,
-                            error: false
-                        }
-                        break;
-                    case generateReplyTopicName(mockErrorSuffix):
-                        resp = {
-                            payload: errors.bridgeError,
-                            error: true
-                        }
-                        break;
-                }
-                if (resp && 'string' == typeof topic) {
-                    mqttMock.sendMessage(topic, resp);
-                }
-            }, sandbox)
-        })
+        const responseMockHandler = (topic: string | string[], mqttMock: MockMqttOperations) => {
+            let resp: ResponseMessage<any> | undefined;
+            switch (topic) {
+                case generateReplyTopicName('AdjustSeekPosition'):
+                    resp = {
+                        payload: eventContext.response,
+                        error: false
+                    }
+                    break;
+                case generateReplyTopicName(mockErrorSuffix):
+                    resp = {
+                        payload: errors.bridgeError,
+                        error: true
+                    }
+                    break;
+            }
+            if (resp && 'string' == typeof topic) {
+                mqttMock.sendMessage(topic, resp);
+            }
+        }
         afterEach(function () {
             sandbox.restore()
         })
@@ -73,6 +70,12 @@ describe('SeekController', function () {
             })
             after(() => {
                 resetDirectiveMocks()
+            })
+            beforeEach(function () {
+                setupMqttMock(responseMockHandler, sandbox, defaultMessageContext)
+            })
+            afterEach(function () {
+                resetIotDataPublish()
             })
 
             it('should send a message', async function () {
@@ -88,12 +91,10 @@ describe('SeekController', function () {
                 expect(event)
                     .to.have.property('event')
                     .to.have.property('payload').eql(eventContext.response);
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
             it('should map an error', async function () {
                 const messageContext = defaultMessageContext
                 await testMockErrorResponse({ ...messageContext, messageSuffix: mockErrorSuffix });
-                sandbox.assert.called(<SinonSpy<any, any>><unknown>mqtt.MqttClient)
             })
         })
         context('Power Off', function () {

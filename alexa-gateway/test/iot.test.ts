@@ -65,7 +65,7 @@ describe('IOT', function () {
             context('Sync Messages', function () {
                 const sandbox = createSandbox()
                 before(function () {
-                    mockMqtt((topic, mqttMock) => {
+                    mockMqtt(sandbox,(topic, mqttMock) => {
                         if (topic == '$aws/things/' + vestibuleClientId + '/shadow/update/accepted') {
                             const respShadow: Shadow = {
                                 state: {
@@ -80,7 +80,7 @@ describe('IOT', function () {
                             }
                             mqttMock.sendMessage(topic, respShadow);
                         }
-                    },sandbox)
+                    })
                 })
                 after(function () {
                     sandbox.restore()
@@ -201,7 +201,7 @@ describe('IOT', function () {
         context('Sync', async function () {
             const sandbox = createSandbox()
             before(function () {
-                mockMqtt((topic, mqttMock) => {
+                mockMqtt(sandbox,(topic, mqttMock) => {
                     let resp: ResponseMessage<any> | undefined;
                     if (topic == 'vestibule-bridge/' + vestibuleClientId + '/alexa/event/' + messageId + '-success') {
                         resp = {
@@ -228,7 +228,7 @@ describe('IOT', function () {
                     if (resp && 'string' == typeof topic) {
                         mqttMock.sendMessage(topic, resp);
                     }
-                },sandbox)
+                })
             })
             after(function () {
                 sandbox.restore()

@@ -28,7 +28,7 @@ class Handler extends DefaultEndpointOnHandler<DirectiveNamespace> implements Co
     }
     getEndpointMessageFlags(message: SubType<DirectiveMessage, DirectiveNamespace>, states: EndpointState): MessageHandlingFlags {
         return {
-            request: message.payload,
+            request: message,
             sync: true
         }
     }

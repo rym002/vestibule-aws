@@ -15,7 +15,7 @@ class Handler extends DefaultNotStoppedHandler<DirectiveNamespace> {
     }
     getEndpointMessageFlags(message: SubType<DirectiveMessage, DirectiveNamespace>, states: EndpointState): MessageHandlingFlags {
         return {
-            request: message.payload,
+            request: message,
             sync: true
         }
     }
