@@ -125,7 +125,6 @@ describe('PowerController', function () {
                 }
             }
             after(function () {
-                sandbox.restore()
                 resetDirectiveMocks()
             })
             before(async function () {
@@ -136,6 +135,7 @@ describe('PowerController', function () {
             })
             afterEach(function () {
                 resetIotDataPublish()
+                sandbox.restore()
             })
             it('should send a message', async function () {
                 await testSuccessfulMessage(messageContext, eventContext)
