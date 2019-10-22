@@ -1,7 +1,7 @@
-import { ContextPropertyReporter, shadowToDate, EndpointStateValue, EndpointStateMetadataValue, NamedContextValue } from './Endpoint';
-import { CapabilityHandler } from './Discovery';
-import { SubType, EndpointCapability, EndpointState, EndpointStateMetadata } from '@vestibule-link/iot-types';
 import { Alexa, Discovery, EndpointHealth } from '@vestibule-link/alexa-video-skill-types';
+import { EndpointState, EndpointStateMetadata, SubType } from '@vestibule-link/iot-types';
+import { CapabilityHandler, EndpointCapabilitiesRecord } from './Discovery';
+import { ContextPropertyReporter, EndpointStateMetadataValue, EndpointStateValue, NamedContextValue, shadowToDate } from './Endpoint';
 
 type DirectiveNamespace = EndpointHealth.NamespaceType;
 const namespace: DirectiveNamespace = EndpointHealth.namespace;
@@ -19,12 +19,12 @@ class Handler implements CapabilityHandler<DirectiveNamespace>, ContextPropertyR
             timeOfSample: shadowToDate(metadata)
         }
     }
-    getCapability(capabilities: NonNullable<SubType<EndpointCapability, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
+    getCapability(capabilities: NonNullable<SubType<EndpointCapabilitiesRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
         return {
             interface: namespace,
             retrievable: true,
             properties: {
-                supported: capabilities.map(capability => {
+                supported: capabilities.SS!.map(capability => {
                     return {
                         name: capability
                     }

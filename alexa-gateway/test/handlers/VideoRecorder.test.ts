@@ -82,7 +82,7 @@ describe('VideoRecorder', function () {
         })
         context('SearchAndRecord', function () {
             before(async function () {
-                await setupNotPlayingContent(capabilities)
+                await setupNotPlayingContent()
             })
             after(() => {
                 resetDirectiveMocks()
@@ -118,7 +118,7 @@ describe('VideoRecorder', function () {
         })
         context('Power Off', function () {
             before(async function () {
-                await setupPoweredOff(capabilities);
+                await setupPoweredOff();
             })
             after(() => {
                 resetDirectiveMocks()
@@ -130,7 +130,7 @@ describe('VideoRecorder', function () {
         })
         context('Invalid Endpoint', function () {
             before(async function () {
-                await setupInvalidEndpoint(capabilities);
+                await setupInvalidEndpoint();
             })
             after(() => {
                 resetDirectiveMocks()
@@ -142,7 +142,7 @@ describe('VideoRecorder', function () {
     })
     context(('disconnected bridge'), function () {
         before(async function () {
-            await setupDisconnectedBridge(capabilities);
+            await setupDisconnectedBridge();
         })
         after(() => {
             resetDirectiveMocks()

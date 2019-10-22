@@ -1,8 +1,9 @@
-import { DefaultEndpointOnHandler, MessageHandlingFlags, ContextPropertyReporter, shadowToDate, TrackedEndpointShadow, EndpointStateValue, EndpointStateMetadataValue, NamedContextValue, convertToContext } from "./Endpoint";
-import { SubType, EndpointCapability, EndpointState, EndpointStateMetadata, LocalEndpoint, getShadowEndpoint, getShadowEndpointMetadata, DirectiveErrorResponse, ErrorHolder } from "@vestibule-link/iot-types";
-import { Discovery, VideoRecorder, Alexa, Video } from "@vestibule-link/alexa-video-skill-types";
+import { Alexa, Discovery, Video, VideoRecorder } from "@vestibule-link/alexa-video-skill-types";
+import { DirectiveErrorResponse, EndpointState, EndpointStateMetadata, ErrorHolder, getShadowEndpoint, getShadowEndpointMetadata, LocalEndpoint, SubType } from "@vestibule-link/iot-types";
 import { DirectiveMessage, DirectiveResponseByNamespace } from ".";
 import { TopicResponse } from "../iot";
+import { EndpointCapabilitiesRecord } from "./Discovery";
+import { ContextPropertyReporter, convertToContext, DefaultEndpointOnHandler, EndpointStateMetadataValue, EndpointStateValue, MessageHandlingFlags, NamedContextValue, shadowToDate, TrackedEndpointShadow } from "./Endpoint";
 
 type DirectiveNamespace = VideoRecorder.NamespaceType;
 const namespace: DirectiveNamespace = VideoRecorder.namespace;
@@ -21,7 +22,7 @@ class Handler extends DefaultEndpointOnHandler<DirectiveNamespace> implements Co
         }
     }
 
-    getCapability(capabilities: NonNullable<SubType<EndpointCapability, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
+    getCapability(capabilities: NonNullable<SubType<EndpointCapabilitiesRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
         return {
             interface: namespace
         }

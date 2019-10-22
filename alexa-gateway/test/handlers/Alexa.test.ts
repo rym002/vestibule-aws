@@ -39,7 +39,7 @@ describe('Alexa', function (){
             context('connected bridge', function (){
             before(async function (){
                 await directiveMocks(emptyParameters);
-                mockEndpointState(state, capabilitites, localEndpoint, true, vestibuleClientId);
+                mockEndpointState(state, localEndpoint, true, vestibuleClientId);
             })
             after(() => {
                 resetDirectiveMocks()
@@ -58,7 +58,7 @@ describe('Alexa', function (){
         context('disconnected bridge', function (){
             before(async function (){
                 await directiveMocks(emptyParameters);
-                mockEndpointState(state, capabilitites, localEndpoint, false, vestibuleClientId);
+                mockEndpointState(state, localEndpoint, false, vestibuleClientId);
             })
             after(() => {
                 resetDirectiveMocks()

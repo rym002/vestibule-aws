@@ -1,40 +1,71 @@
 import { generateEndpointId } from '@vestibule-link/iot-types';
+import { DynamoDB } from 'aws-sdk';
+import * as AWSMock from 'aws-sdk-mock';
 import { expect } from 'chai';
 import 'mocha';
 import { handler } from '../../src/handler';
+import { mockAwsWithSpy } from '../mock/AwsMock';
 import { authenticationProps, generateToken, generateValidScope, getSharedKey } from '../mock/CognitoMock';
-import { directiveMocks, resetDirectiveMocks } from '../mock/DirectiveMocks';
-import { localEndpoint, messageId, mockShadow, vestibuleClientId } from '../mock/IotDataMock';
+import { directiveMocks } from '../mock/DirectiveMocks';
+import { localEndpoint, messageId, vestibuleClientId } from '../mock/IotDataMock';
 import { fakeCallback, FakeContext } from '../mock/LambdaMock';
 import { emptyParameters } from './TestHelper';
 
 
-describe('Discovery', function (){
-    before(async function (){
+describe('Discovery', function () {
+    before(async function () {
         await directiveMocks(emptyParameters);
-        mockShadow({
-            state: {
-                reported: {
-                    connected: true,
-                    endpoints: {
-                        [generateEndpointId(localEndpoint)]: {
-                            info: {
-                                description: 'test desc',
-                                displayCategories: ["TV"],
-                                endpointId: generateEndpointId(localEndpoint),
-                                friendlyName: 'My Test Endpoint',
-                                manufacturerName: 'Mocking'
+        mockAwsWithSpy<DynamoDB.Types.QueryInput, DynamoDB.Types.QueryOutput>('DynamoDB', 'query', (req) => {
+            if (req.ExpressionAttributeValues![':user_id'].S == vestibuleClientId) {
+                if (req.TableName == 'vestibule_endpoint_info') {
+                    return {
+                        Items: [
+                            {
+                                description: {
+                                    S: 'test desc'
+                                },
+                                displayCategories: {
+                                    SS: ["TV"]
+                                },
+                                endpoint_id: {
+                                    S: generateEndpointId(localEndpoint)
+                                },
+                                friendlyName: {
+                                    S: 'My Test Endpoint'
+                                },
+                                manufacturerName: {
+                                    S: 'Mocking'
+                                }
+
                             }
-                        }
+                        ]
+                    }
+                } else {
+                    return {
+                        Items: [
+                            {
+                                endpoint_id: {
+                                    S: generateEndpointId(localEndpoint)
+                                },
+                                'Alexa.PlaybackController':{
+                                    SS:[
+                                        'PLAY'
+                                    ]
+                                }
+                            }
+                        ]
                     }
                 }
             }
-        }, vestibuleClientId)
+            return {
+
+            }
+        })
     })
     after(() => {
-        resetDirectiveMocks()
+        AWSMock.restore('DynamoDB', 'query');
     })
-    it('should discover from thing shadow', async function (){
+    it('should discover from thing shadow', async function () {
         const ret = await handler({
             directive: {
                 header: {
@@ -52,7 +83,7 @@ describe('Discovery', function (){
             .to.have.property('endpoints')
             .to.have.length(1)
     })
-    it('should return empty endpoints on error', async function (){
+    it('should return empty endpoints on error', async function () {
         const key = await getSharedKey();
         const token = await generateToken(key, 'invalidClientId', authenticationProps.testClientIds[0], new Date(Date.now() + 5000), authenticationProps.testPoolId, authenticationProps.testRegionId);
         const ret = await handler({

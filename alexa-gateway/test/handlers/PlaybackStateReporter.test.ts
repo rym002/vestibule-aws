@@ -4,7 +4,7 @@ import handler from '../../src/handlers/PlaybackStateReporter';
 
 describe('PlaybackStateReporter', function () {
     it('should map capability', async function () {
-        const capability = handler.getCapability(['playbackState']);
+        const capability = handler.getCapability({ SS: ['playbackState'] });
         expect(capability);
     })
 

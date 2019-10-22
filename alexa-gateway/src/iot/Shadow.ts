@@ -18,9 +18,7 @@ class AsyncHandler implements ShadowHandler {
             state: {
                 desired: {
                     endpoints: {
-                        [endpointId]: {
-                            states: desired
-                        }
+                        [endpointId]: desired
                     }
                 }
             }

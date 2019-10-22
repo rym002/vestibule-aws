@@ -51,9 +51,7 @@ describe('IOT', function () {
                     state: {
                         desired: {
                             endpoints: {
-                                [generateEndpointId(localEndpoint)]: {
-                                    states: desiredState
-                                }
+                                [generateEndpointId(localEndpoint)]: desiredState
                             }
                         }
                     }
@@ -65,15 +63,13 @@ describe('IOT', function () {
             context('Sync Messages', function () {
                 const sandbox = createSandbox()
                 before(function () {
-                    mockMqtt(sandbox,(topic, mqttMock) => {
+                    mockMqtt(sandbox, (topic, mqttMock) => {
                         if (topic == '$aws/things/' + vestibuleClientId + '/shadow/update/accepted') {
                             const respShadow: Shadow = {
                                 state: {
                                     reported: {
                                         endpoints: {
-                                            [generateEndpointId(localEndpoint)]: {
-                                                states: desiredState
-                                            }
+                                            [generateEndpointId(localEndpoint)]: desiredState
                                         }
                                     }
                                 }
@@ -126,8 +122,8 @@ describe('IOT', function () {
                     reported: {
                         endpoints: {
                             '123': {
-                                capabilities: {
-                                    "Alexa.PlaybackController": ['Play']
+                                'Alexa.PlaybackStateReporter':{
+                                    playbackState:'PLAYING'
                                 }
                             }
                         }
@@ -201,7 +197,7 @@ describe('IOT', function () {
         context('Sync', async function () {
             const sandbox = createSandbox()
             before(function () {
-                mockMqtt(sandbox,(topic, mqttMock) => {
+                mockMqtt(sandbox, (topic, mqttMock) => {
                     let resp: ResponseMessage<any> | undefined;
                     if (topic == 'vestibule-bridge/' + vestibuleClientId + '/alexa/event/' + messageId + '-success') {
                         resp = {
@@ -255,14 +251,12 @@ describe('IOT', function () {
                     .to.have.property('reported')
                     .to.have.property('endpoints')
                     .to.have.property(generateEndpointId(localEndpoint))
-                    .to.have.property('states')
                     .to.eql(sharedStates.playback.playing)
                 expect(resp).to.have.property('shadow')
                     .to.have.property('metadata')
                     .to.have.property('reported')
                     .to.have.property('endpoints')
                     .to.have.property(generateEndpointId(localEndpoint))
-                    .to.have.property('states')
                     .to.have.property('Alexa.PlaybackStateReporter')
                     .to.have.property('playbackState')
                     .to.have.property('timestamp', Math.floor(Date.now() / 1000))

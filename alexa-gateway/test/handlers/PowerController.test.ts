@@ -51,7 +51,7 @@ describe('PowerController', function () {
         const messageContext = turnOnMessageContext;
         context('powerState OFF', function () {
             before(async function () {
-                await setupPoweredOff(capabilities);
+                await setupPoweredOff();
             })
             after(() => {
                 resetDirectiveMocks()
@@ -63,7 +63,7 @@ describe('PowerController', function () {
         })
         context('powerState ON', function () {
             before(async function () {
-                await setupNotPlayingContent(capabilities);
+                await setupNotPlayingContent();
             })
             after(() => {
                 resetDirectiveMocks()
@@ -85,7 +85,7 @@ describe('PowerController', function () {
         const messageContext = turnOffMessageContext;
         context('powerState OFF', function () {
             before(async function () {
-                await setupPoweredOff(capabilities);
+                await setupPoweredOff();
             })
             after(() => {
                 resetDirectiveMocks()
@@ -128,7 +128,7 @@ describe('PowerController', function () {
                 resetDirectiveMocks()
             })
             before(async function () {
-                await setupNotPlayingContent(capabilities);
+                await setupNotPlayingContent();
             })
             beforeEach(function () {
                 setupMqttMock(responseMockHandler, sandbox, messageContext)

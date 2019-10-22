@@ -75,7 +75,7 @@ describe('RemoteVideoPlayer', function () {
                 resetIotDataPublish()
             })
             before(async function () {
-                await setupNotPlayingContent(capabilities)
+                await setupNotPlayingContent()
             })
             after(() => {
                 resetDirectiveMocks()
@@ -90,7 +90,7 @@ describe('RemoteVideoPlayer', function () {
         })
         context('Power Off', function () {
             before(async function () {
-                await setupPoweredOff(capabilities);
+                await setupPoweredOff();
             })
             after(() => {
                 resetDirectiveMocks()
@@ -102,7 +102,7 @@ describe('RemoteVideoPlayer', function () {
         })
         context('Invalid Endpoint', function () {
             before(async function () {
-                await setupInvalidEndpoint(capabilities);
+                await setupInvalidEndpoint();
             })
             after(() => {
                 resetDirectiveMocks()
@@ -114,7 +114,7 @@ describe('RemoteVideoPlayer', function () {
     })
     context(('disconnected bridge'), function () {
         before(async function () {
-            await setupDisconnectedBridge(capabilities);
+            await setupDisconnectedBridge();
         })
         after(() => {
             resetDirectiveMocks()

@@ -273,33 +273,33 @@ export function verifySuccessResponse(event: Event.Message, eventContext: EventM
 export function emptyParameters(path: string): SSM.Parameter[] {
     return []
 }
-export async function setupDisconnectedBridge(capabilities: EndpointCapability) {
+export async function setupDisconnectedBridge() {
     await directiveMocks(emptyParameters);
-    mockEndpointState({}, capabilities, localEndpoint, false, vestibuleClientId);
+    mockEndpointState({}, localEndpoint, false, vestibuleClientId);
 }
 
-export async function setupInvalidEndpoint(capabilities: EndpointCapability) {
+export async function setupInvalidEndpoint() {
     await directiveMocks(emptyParameters);
-    mockEndpointState({}, capabilities, localEndpoint, true, vestibuleClientId);
+    mockEndpointState({}, localEndpoint, true, vestibuleClientId);
 }
 
-export async function setupPoweredOff(capabilities: EndpointCapability) {
+export async function setupPoweredOff() {
     await directiveMocks(emptyParameters);
-    mockEndpointState({ ...sharedStates.power.off }, capabilities, localEndpoint, true, vestibuleClientId);
+    mockEndpointState({ ...sharedStates.power.off }, localEndpoint, true, vestibuleClientId);
 }
 
-export async function setupNotWatchingTv(capabilities: EndpointCapability) {
+export async function setupNotWatchingTv() {
     await directiveMocks(emptyParameters);
-    mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing }, capabilities, localEndpoint, true, vestibuleClientId);
+    mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing }, localEndpoint, true, vestibuleClientId);
 }
 
-export async function setupNotPlayingContent(capabilities: EndpointCapability) {
+export async function setupNotPlayingContent() {
     await directiveMocks(emptyParameters);
-    mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.stopped }, capabilities, localEndpoint, true, vestibuleClientId);
+    mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.stopped }, localEndpoint, true, vestibuleClientId);
 }
-export async function setupWatchingTv(capabilities: EndpointCapability) {
+export async function setupWatchingTv() {
     await directiveMocks(emptyParameters);
-    mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing, ...sharedStates.channel }, capabilities, localEndpoint, true, vestibuleClientId);
+    mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing, ...sharedStates.channel }, localEndpoint, true, vestibuleClientId);
 }
 
 export function setupMqttMock(subscribeHandler: (topic: string | string[], mqttMock: MockMqttOperations) => void, sandbox: SinonSandbox, messageContext: DirectiveMessageContext) {

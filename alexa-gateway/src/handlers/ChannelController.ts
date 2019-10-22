@@ -1,7 +1,8 @@
-import { DefaultEndpointOnHandler, ContextPropertyReporter, MessageHandlingFlags, shadowToDate, createAlexaResponse, EndpointStateValue, EndpointStateMetadataValue, NamedContextValue } from "./Endpoint";
-import { EndpointState, ErrorHolder, SubType, EndpointCapability, EndpointStateMetadata } from '@vestibule-link/iot-types';
-import { Discovery, Alexa, ChannelController } from '@vestibule-link/alexa-video-skill-types';
+import { Alexa, ChannelController, Discovery } from '@vestibule-link/alexa-video-skill-types';
+import { EndpointState, EndpointStateMetadata, ErrorHolder, SubType } from '@vestibule-link/iot-types';
 import { DirectiveMessage } from ".";
+import { EndpointCapabilitiesRecord } from "./Discovery";
+import { ContextPropertyReporter, createAlexaResponse, DefaultEndpointOnHandler, EndpointStateMetadataValue, EndpointStateValue, MessageHandlingFlags, NamedContextValue, shadowToDate } from "./Endpoint";
 
 type DirectiveNamespace = ChannelController.NamespaceType;
 const namespace = ChannelController.namespace;
@@ -58,12 +59,12 @@ class Handler extends DefaultEndpointOnHandler<DirectiveNamespace> implements Co
             return {}
         }
     }
-    getCapability(capabilities: NonNullable<SubType<EndpointCapability, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
+    getCapability(capabilities: NonNullable<SubType<EndpointCapabilitiesRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
         return {
             interface: namespace,
             retrievable: true,
             properties: {
-                supported: capabilities.map(capability => {
+                supported: capabilities.SS!.map(capability => {
                     return {
                         name: capability
                     }

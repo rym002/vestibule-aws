@@ -1,14 +1,15 @@
-import { DefaultEndpointOnHandler, MessageHandlingFlags, createAlexaResponse } from './Endpoint';
-import { SubType, EndpointCapability, EndpointState } from '@vestibule-link/iot-types';
 import { Discovery, RemoteVideoPlayer } from '@vestibule-link/alexa-video-skill-types';
+import { EndpointState, SubType } from '@vestibule-link/iot-types';
 import { DirectiveMessage } from '.';
+import { EndpointCapabilitiesRecord } from './Discovery';
+import { createAlexaResponse, DefaultEndpointOnHandler, MessageHandlingFlags } from './Endpoint';
 
 type DirectiveNamespace = RemoteVideoPlayer.NamespaceType;
 const namespace: DirectiveNamespace = RemoteVideoPlayer.namespace;
 
 class Handler extends DefaultEndpointOnHandler<DirectiveNamespace> {
     createResponse = createAlexaResponse;
-    getCapability(capabilities: NonNullable<SubType<EndpointCapability, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
+    getCapability(capabilities: NonNullable<SubType<EndpointCapabilitiesRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
         return {
             interface: namespace
         }

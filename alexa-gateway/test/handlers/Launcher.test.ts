@@ -68,7 +68,7 @@ describe('Launcher', function () {
 
         context('LaunchTarget', function () {
             before(async function () {
-                await setupNotPlayingContent(capabilities)
+                await setupNotPlayingContent()
             })
             after(() => {
                 resetDirectiveMocks()
@@ -92,7 +92,7 @@ describe('Launcher', function () {
 
         context('Power Off', function () {
             before(async function () {
-                await setupPoweredOff(capabilities);
+                await setupPoweredOff();
             })
             after(() => {
                 resetDirectiveMocks()
@@ -104,7 +104,7 @@ describe('Launcher', function () {
         })
         context('Invalid Endpoint', function () {
             before(async function () {
-                await setupInvalidEndpoint(capabilities);
+                await setupInvalidEndpoint();
             })
             after(() => {
                 resetDirectiveMocks()
@@ -116,7 +116,7 @@ describe('Launcher', function () {
     })
     context(('disconnected bridge'), function () {
         before(async function () {
-            await setupDisconnectedBridge(capabilities);
+            await setupDisconnectedBridge();
         })
         after(() => {
             resetDirectiveMocks()

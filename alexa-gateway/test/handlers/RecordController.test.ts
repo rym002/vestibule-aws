@@ -91,7 +91,7 @@ describe('RecordController', function () {
         context('RECORDING', function () {
             before(async function () {
                 await directiveMocks(emptyParameters);
-                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing, ...sharedStates.record.recording }, capabilities, localEndpoint, true, vestibuleClientId);
+                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing, ...sharedStates.record.recording }, localEndpoint, true, vestibuleClientId);
             })
             after(() => {
                 resetDirectiveMocks()
@@ -117,7 +117,7 @@ describe('RecordController', function () {
         context('NOT_RECORDING', function () {
             before(async function () {
                 await directiveMocks(emptyParameters);
-                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing, ...sharedStates.record.not_recording }, capabilities, localEndpoint, true, vestibuleClientId);
+                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing, ...sharedStates.record.not_recording }, localEndpoint, true, vestibuleClientId);
             })
             after(() => {
                 resetDirectiveMocks()
@@ -142,7 +142,7 @@ describe('RecordController', function () {
         })
         context('Power Off', function () {
             before(async function () {
-                await setupPoweredOff(capabilities);
+                await setupPoweredOff();
             })
             after(() => {
                 resetDirectiveMocks()
@@ -154,7 +154,7 @@ describe('RecordController', function () {
         })
         context('Invalid Endpoint', function () {
             before(async function () {
-                await setupInvalidEndpoint(capabilities);
+                await setupInvalidEndpoint();
             })
             after(() => {
                 resetDirectiveMocks()
@@ -166,7 +166,7 @@ describe('RecordController', function () {
     })
     context(('disconnected bridge'), function () {
         before(async function () {
-            await setupDisconnectedBridge(capabilities);
+            await setupDisconnectedBridge();
         })
         after(() => {
             resetDirectiveMocks()

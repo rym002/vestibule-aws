@@ -91,7 +91,7 @@ describe('ChannelController', function () {
 
         context('Watching TV', function () {
             before(async function () {
-                await setupWatchingTv(capabilities);
+                await setupWatchingTv();
             })
             after(() => {
                 resetDirectiveMocks()
@@ -137,7 +137,7 @@ describe('ChannelController', function () {
         })
         context('Not Watching TV', function () {
             before(async function () {
-                await setupNotWatchingTv(capabilities);
+                await setupNotWatchingTv();
             })
             after(() => {
                 resetDirectiveMocks()
@@ -164,7 +164,7 @@ describe('ChannelController', function () {
         })
         context('Power Off', function () {
             before(async function () {
-                await setupPoweredOff(capabilities);
+                await setupPoweredOff();
             })
             after(() => {
                 resetDirectiveMocks()
@@ -186,7 +186,7 @@ describe('ChannelController', function () {
         })
         context('Invalid Endpoint', function () {
             before(async function () {
-                await setupInvalidEndpoint(capabilities);
+                await setupInvalidEndpoint();
             })
             after(() => {
                 resetDirectiveMocks()
@@ -208,7 +208,7 @@ describe('ChannelController', function () {
     })
     context(('disconnected bridge'), function () {
         before(async function () {
-            await setupDisconnectedBridge(capabilities);
+            await setupDisconnectedBridge();
         })
         after(() => {
             resetDirectiveMocks()

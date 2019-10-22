@@ -1,7 +1,8 @@
-import { ContextPropertyReporter, DefaultEndpointCapabilityHandler, TrackedEndpointShadow, shadowToDate, NamedContextValue, EndpointStateValue, EndpointStateMetadataValue, convertToContext, DefaultIotEndpointHandler, createAlexaResponse, MessageHandlingFlags } from './Endpoint';
-import { SubType, EndpointCapability, EndpointState, LocalEndpoint, ErrorHolder, EndpointStateMetadata } from '@vestibule-link/iot-types';
 import { Alexa, Discovery, PowerController } from '@vestibule-link/alexa-video-skill-types';
+import { EndpointState, EndpointStateMetadata, LocalEndpoint, SubType } from '@vestibule-link/iot-types';
 import { DirectiveMessage, DirectiveResponseByNamespace } from '.';
+import { EndpointCapabilitiesRecord } from './Discovery';
+import { ContextPropertyReporter, createAlexaResponse, DefaultIotEndpointHandler, EndpointStateMetadataValue, EndpointStateValue, MessageHandlingFlags, NamedContextValue, shadowToDate, TrackedEndpointShadow } from './Endpoint';
 import wol from './WOL';
 
 type DirectiveNamespace = PowerController.NamespaceType;
@@ -27,12 +28,12 @@ class Handler extends DefaultIotEndpointHandler<DirectiveNamespace> implements C
 
     }
 
-    getCapability(capabilities: NonNullable<SubType<EndpointCapability, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
+    getCapability(capabilities: NonNullable<SubType<EndpointCapabilitiesRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
         return {
             interface: namespace,
             retrievable: true,
             properties: {
-                supported: capabilities.map(capability => {
+                supported: capabilities.SS!.map(capability => {
                     return {
                         name: capability
                     }
@@ -57,12 +58,12 @@ class Handler extends DefaultIotEndpointHandler<DirectiveNamespace> implements C
         const name = message.name;
         let error = undefined;
         const shadowEndpoint = trackedEndpoint.endpoint;
-        const powerStates = shadowEndpoint.states ? shadowEndpoint.states[namespace] : undefined;
+        const powerStates = shadowEndpoint ? shadowEndpoint[namespace] : undefined;
         const powerState = powerStates ? powerStates.powerState : undefined;
         switch (name) {
             case 'TurnOn':
 
-                if (message.header.correlationToken && shadowEndpoint.states && powerState == 'OFF') {
+                if (message.header.correlationToken && powerState == 'OFF') {
                     await wol.sendEvent(userSub, messageId, message.endpoint.endpointId, trackedEndpoint, message.header.correlationToken);
                     return this.createResponse(message, trackedEndpoint, localEndpoint, {
                         response: {

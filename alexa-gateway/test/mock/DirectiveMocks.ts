@@ -5,7 +5,7 @@ import { getCognitoTestParameters, setupCognitoMock } from "./CognitoMock";
 import { getIotTestParameters, mockShadow, resetIotDataGetThingShadow } from "./IotDataMock";
 import { mockSSM, resetSSM } from "./SSMMocks";
 
-export function directiveSSMMocks(additionalParameters: (path:string)=>SSM.Parameter[]) {
+export function directiveSSMMocks(additionalParameters: (path: string) => SSM.Parameter[]) {
     mockSSM((params: SSM.Types.GetParametersByPathRequest) => {
         return {
             Parameters: [...getCognitoTestParameters(params.Path), ...getIotTestParameters(params.Path), ...additionalParameters(params.Path)]
@@ -13,7 +13,7 @@ export function directiveSSMMocks(additionalParameters: (path:string)=>SSM.Param
     });
 }
 
-export async function directiveMocks(additionalParameters: (path:string)=>SSM.Parameter[]) {
+export async function directiveMocks(additionalParameters: (path: string) => SSM.Parameter[]) {
     directiveSSMMocks(additionalParameters);
     await setupCognitoMock();
 }
@@ -23,11 +23,11 @@ export function resetDirectiveMocks() {
     resetIotDataGetThingShadow();
 }
 
-export function mockEndpointState(state: EndpointState, capabilities: EndpointCapability, endpoint: LocalEndpoint, connected: boolean, clientId: string) {
-    const shadow = createShadow(state, capabilities, endpoint, connected);
+export function mockEndpointState(state: EndpointState, endpoint: LocalEndpoint, connected: boolean, clientId: string) {
+    const shadow = createShadow(state, endpoint, connected);
     return mockShadow(shadow, clientId);
 }
-function createShadow(state: EndpointState, capabilities: EndpointCapability, endpoint: LocalEndpoint, connected: boolean): Shadow {
+function createShadow(state: EndpointState, endpoint: LocalEndpoint, connected: boolean): Shadow {
     const updateTime = Math.floor(Date.now() / 1000);
     const endpointId = generateEndpointId(endpoint);
     const metadata: ProvidersMetadata = _.cloneDeepWith(state, (value, key) => {
@@ -43,19 +43,14 @@ function createShadow(state: EndpointState, capabilities: EndpointCapability, en
             reported: {
                 connected: connected,
                 endpoints: {
-                    [endpointId]: {
-                        states: state,
-                        capabilities: capabilities
-                    }
+                    [endpointId]: state
                 }
             }
         },
         metadata: {
             reported: {
                 endpoints: {
-                    [endpointId]: {
-                        states: metadata
-                    }
+                    [endpointId]: metadata
                 }
             }
         }

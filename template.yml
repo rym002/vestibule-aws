@@ -35,6 +35,8 @@ Resources:
         Variables:
           refresh_token_table: !Select [1, !Split [ "/", !GetAtt RefreshTokensTable.Arn]]
           auth_token_table: !Select [1, !Split [ "/", !GetAtt AuthTokensTable.Arn]]
+          endpoint_capabilities_table: !Select [1, !Split [ "/", !GetAtt EndpointCapabilitiesTable.Arn]]
+          endpoint_info_table: !Select [1, !Split [ "/", !GetAtt EndpointInfoTable.Arn]]
   AlexaGatewayInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -75,6 +77,48 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
+  EndpointCapabilitiesTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: !Sub ${AWS::StackName}-EndpointCapabilities
+      AttributeDefinitions:
+        -
+          AttributeName: user_id
+          AttributeType: S
+        -
+          AttributeName: endpoint_id
+          AttributeType: S
+      KeySchema:
+        - 
+          AttributeName: user_id
+          KeyType: HASH
+        - 
+          AttributeName: endpoint_id
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+  EndpointInfoTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: !Sub ${AWS::StackName}-EndpointInfo
+      AttributeDefinitions:
+        -
+          AttributeName: user_id
+          AttributeType: S
+        -
+          AttributeName: endpoint_id
+          AttributeType: S
+      KeySchema:
+        - 
+          AttributeName: user_id
+          KeyType: HASH
+        - 
+          AttributeName: endpoint_id
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
   AlexaGatewayRole:
     Type: AWS::IAM::Role
     Properties:
@@ -101,13 +145,21 @@ Resources:
           -
             Effect: Allow
             Action:
-              - dynamodb:BatchGetItem
               - dynamodb:BatchWriteItem
               - dynamodb:PutItem
+              - dynamodb:BatchGetItem
+            Resource:
+              - !GetAtt AuthTokensTable.Arn
+              - !GetAtt RefreshTokensTable.Arn
+          -
+            Effect: Allow
+            Action:
               - dynamodb:GetItem
             Resource:
               - !GetAtt AuthTokensTable.Arn
               - !GetAtt RefreshTokensTable.Arn
+              - !GetAtt EndpointCapabilitiesTable.Arn
+              - !GetAtt EndpointInfoTable.Arn
           -
             Effect: Allow
             Action:
@@ -202,6 +254,8 @@ Resources:
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${!iot:Connection.Thing.ThingTypeName}/${!iot:Connection.Thing.ThingName}/alexa/event/*
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/update
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/get
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${!iot:Connection.Thing.ThingTypeName}/${!iot:Connection.Thing.ThingName}/alexa/capabilities/*
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${!iot:Connection.Thing.ThingTypeName}/${!iot:Connection.Thing.ThingName}/alexa/info/*
           -
             Effect: Allow
             Action: 
@@ -245,6 +299,46 @@ Resources:
             } 
             FROM '$aws/events/presence/+/+' 
             WHERE startswith(clientId,"vestibule-bridge-")
+  IOTEndpointCapabilityUpdateRule:
+    Type: AWS::IoT::TopicRule
+    Properties:
+      RuleName:
+        !Sub
+        - ${StackName}_EndpointCapabilityUpdate
+        - { StackName: !Join ["_", !Split [ "-", !Ref "AWS::StackName"]] }
+      TopicRulePayload:
+        Actions:
+          -
+            DynamoDBv2:
+              RoleArn: !GetAtt VestibuleIotRuleRole.Arn
+              PutItem: !Select [1, !Split [ "/", !GetAtt EndpointCapabilitiesTable.Arn]]
+        Description: Update DynamoDB table with endpoint capabilities
+        RuleDisabled: false
+        AwsIotSqlVersion: 2016-03-23
+        Sql: >-
+          SELECT substring(topic(2),length('vestibule-bridge-')) as user_id, concat(topic(5),'@',topic(6)) as endpoint_id, * 
+          FROM 'vestibule-bridge/+/alexa/capabilties/+/+' 
+          WHERE startswith(clientId,"vestibule-bridge-")
+  IOTEndpointInfoUpdateRule:
+    Type: AWS::IoT::TopicRule
+    Properties:
+      RuleName:
+        !Sub
+        - ${StackName}_EndpointInfoUpdate
+        - { StackName: !Join ["_", !Split [ "-", !Ref "AWS::StackName"]] }
+      TopicRulePayload:
+        Actions:
+          -
+            DynamoDBv2:
+              RoleArn: !GetAtt VestibuleIotRuleRole.Arn
+              PutItem: !Select [1, !Split [ "/", !GetAtt EndpointInfoTable.Arn]]
+        Description: Update DynamoDB table with endpoint info
+        RuleDisabled: false
+        AwsIotSqlVersion: 2016-03-23
+        Sql: >-
+          SELECT substring(topic(2),length('vestibule-bridge-')) as user_id, concat(topic(5),'@',topic(6)) as endpoint_id, * 
+          FROM 'vestibule-bridge/+/alexa/info/+/+' 
+          WHERE startswith(clientId,"vestibule-bridge-")
   VestibuleIotRuleRole:
     Type: AWS::IAM::Role
     Properties:
@@ -272,6 +366,13 @@ Resources:
             Effect: Allow
             Action: iot:Publish
             Resource: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/vestibule-bridge-*/shadow/update
+          -
+            Effect: Allow
+            Action:
+              - dynamodb:PutItem
+            Resource:
+              - !GetAtt EndpointCapabilitiesTable.Arn
+              - !GetAtt EndpointInfoTable.Arn
   AlexaGatewayLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:

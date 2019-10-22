@@ -1,6 +1,8 @@
 import { Discovery, Message } from '@vestibule-link/alexa-video-skill-types';
-import { DirectiveErrorResponse, EndpointCapability, EndpointInfo, Providers, Shadow, SubType } from '@vestibule-link/iot-types';
-import { DirectiveHandler, DirectiveMessage, DirectiveResponseByNamespace, SHADOW_PREFIX } from '.';
+import { DirectiveErrorResponse, EndpointCapability, EndpointInfo, SubType } from '@vestibule-link/iot-types';
+import { DynamoDB } from 'aws-sdk';
+import * as _ from 'lodash';
+import { DirectiveHandler, DirectiveMessage, DirectiveResponseByNamespace } from '.';
 import ChannelController from './ChannelController';
 import EndpointHealth from './EndpointHealth';
 import Launcher from './Launcher';
@@ -12,13 +14,11 @@ import RemoteVideoPlayer from './RemoteVideoPlayer';
 import SeekController from './SeekController';
 import VideoRecorder from './VideoRecorder';
 import WakeOnLANController from './WOL';
-import * as _ from 'lodash';
-import { getShadow } from '../iot';
 
 type DirectiveNamespace = Discovery.NamespaceType;
 
 export interface CapabilityHandler<NS extends Discovery.CapabilityInterfaces> {
-    getCapability(capabilities: NonNullable<SubType<EndpointCapability, NS>>): SubType<Discovery.NamedCapabilities, NS>
+    getCapability(capabilities: NonNullable<SubType<EndpointCapabilitiesRecord, NS>>): SubType<Discovery.NamedCapabilities, NS>
 }
 
 type CapabilityHandlers = {
@@ -39,27 +39,117 @@ const handlers: CapabilityHandlers = {
     'Alexa.VideoRecorder': VideoRecorder
 }
 
+interface EndpointKey {
+    [key: string]: DynamoDB.AttributeValue
+    user_id: {
+        S: DynamoDB.StringAttributeValue
+    }
+    endpoint_id: {
+        S: DynamoDB.StringAttributeValue
+    }
+}
+
+type EndpointInfoRecord = EndpointKey & Pick<{
+    [K in keyof EndpointInfo]:
+    EndpointInfo[K] extends string
+    ? {
+        S: DynamoDB.StringAttributeValue
+    }
+    : K extends 'displayCategories'
+    ? {
+        SS: Discovery.DisplayCategoryType[]
+    }
+    : {
+        M: {
+            [key: string]: {
+                S: DynamoDB.StringAttributeValue
+            }
+        }
+    }
+}, Exclude<keyof EndpointInfo, 'endpointId'>>
+
+export type EndpointCapabilitiesRecord = EndpointKey & {
+    [K in keyof EndpointCapability]:
+    EndpointCapability[K] extends undefined
+    ? never
+    : EndpointCapability[K] extends string[] | undefined
+    ? {
+        SS: EndpointCapability[K]
+    }
+    : EndpointCapability[K] extends boolean | undefined
+    ? {
+        B: DynamoDB.BooleanAttributeValue
+    }
+    : never
+}
+
+const ENDPOINT_CAPABILITITES_TABLE = process.env['endpoint_capabilities_table'] || 'vestibule_endpoint_capabilities';
+const ENDPOINT_INFO_TABLE = process.env['endpoint_info_table'] || 'vestibule_endpoint_info';
 
 class Handler implements DirectiveHandler<DirectiveNamespace>{
-    shouldCheckShadow() {
-        return true;
+    private _db: DynamoDB | undefined;
+    get db() {
+        if (!this._db) {
+            this._db = new DynamoDB();
+        }
+        return this._db;
     }
     getScope(message: SubType<DirectiveMessage, DirectiveNamespace>): Message.Scope {
         return message.payload.scope;
     }
-    async lookupShadow(userSub: string) {
-        const clientId = SHADOW_PREFIX + userSub;
-        const shadow = await getShadow(clientId);
-        return shadow;
+    private convertEndpoint(infoRecord: EndpointInfoRecord, capabilitiesRecord: EndpointCapabilitiesRecord): Discovery.Endpoint {
+        return {
+            description: infoRecord.description.S,
+            displayCategories: infoRecord.displayCategories.SS,
+            endpointId: infoRecord.endpoint_id.S,
+            friendlyName: infoRecord.friendlyName.S,
+            manufacturerName: infoRecord.manufacturerName.S,
+            capabilities: this.convertEndpointCapability(capabilitiesRecord)
+        }
+    }
+
+    private convertEndpointCapability(record: EndpointCapabilitiesRecord): Discovery.Capabilities[] {
+        const ret = _.map(handlers, (handler, key) => {
+            const capKey = <Discovery.CapabilityInterfaces>key
+            const recValue = record[capKey]
+            if (recValue && (recValue['B'] == undefined || recValue['B'])) {
+                const capValue = handler.getCapability(<any>recValue)
+                return <Discovery.Capabilities>{
+                    type: 'AlexaInterface',
+                    version: '3',
+                    ...capValue
+                }
+            }
+        }).filter(function (value) {
+            return value !== undefined;
+        })
+        return <Discovery.Capabilities[]>ret;
+    }
+    private async getEndpointData<T extends EndpointKey>(userSub: string, tableName: string): Promise<_.Dictionary<T>> {
+        const logType = 'dynamoDb-' + tableName;
+        console.time(logType);
+        const endpointInfos = await this.db.query({
+            TableName: tableName,
+            ExpressionAttributeValues: {
+                ":user_id": {
+                    S: userSub
+                }
+            },
+            KeyConditionExpression: 'user_id = :user_id'
+        }).promise();
+        const ret = _.keyBy(<T[]>endpointInfos.Items, (item) => {
+            return item.endpoint_id.S
+        })
+        console.timeEnd(logType);
+        return ret;
     }
     async getResponse(message: SubType<DirectiveMessage,
         DirectiveNamespace>, messageId: string,
         userSub: string): Promise<SubType<DirectiveResponseByNamespace, DirectiveNamespace>> {
-        const shadow = await this.lookupShadow(userSub);
         return {
             namespace: 'Alexa.Discovery',
             name: 'Discover.Response',
-            payload: this.getResponsePayload(shadow)
+            payload: await this.getResponsePayload(userSub)
         }
 
     }
@@ -73,63 +163,16 @@ class Handler implements DirectiveHandler<DirectiveNamespace>{
             }
         }
     }
-    private getResponsePayload(shadow: Shadow): Discovery.ResponsePayload {
-        if (shadow.state) {
-            if (shadow.state['reported']) {
-                const endpoints = shadow.state['reported'].endpoints;
-                if (endpoints) {
-                    const eps = Object.keys(endpoints).map(this.mapEndpoints(endpoints));
-
-                    const flatEps: Discovery.ResponsePayload = {
-                        endpoints: _.flatten(eps)
-                    };
-                    return flatEps;
-                }
-            }
+    private async getResponsePayload(userSub: string): Promise<Discovery.ResponsePayload> {
+        const endpointInfoDict = await this.getEndpointData<EndpointInfoRecord>(userSub, ENDPOINT_INFO_TABLE)
+        const endpointCapsDict = await this.getEndpointData<EndpointCapabilitiesRecord>(userSub, ENDPOINT_CAPABILITITES_TABLE)
+        const endpoints = _.map(endpointInfoDict, (endpointInfo, endpointId) => {
+            const endpointCaps = endpointCapsDict[endpointId] || {};
+            return this.convertEndpoint(endpointInfo, endpointCaps)
+        })
+        return {
+            endpoints: endpoints
         }
-        throw 'Invalid Shadow';
-    }
-    private mapEndpoints(endpoints: Providers<'alexa'>) {
-        return ((endpointId: string) => {
-            const endpoint = endpoints[endpointId];
-            const capabilities = endpoint.capabilities;
-            let endpointCapabilities: Discovery.Capabilities[];
-            if (capabilities) {
-                const capabilityMapper = this.mapCapability(capabilities);
-                endpointCapabilities = Object.keys(capabilities).map(capabilityMapper);
-            } else {
-                endpointCapabilities = [];
-            }
-            if (endpoint.info) {
-                return this.endpointInfo(endpointCapabilities, endpoint.info);
-            }
-            throw 'Invalid Endpoint';
-        });
-    }
-    private endpointInfo(endpointCapabilities: Discovery.Capabilities[], info: EndpointInfo): Discovery.Endpoint {
-        const ret: Discovery.Endpoint = {
-            ...info, ...{
-                capabilities: endpointCapabilities
-            }
-        };
-        return ret;
-    }
-    private mapCapability(capabilities: EndpointCapability) {
-        return ((capabilityKey: string): Discovery.Capabilities => {
-            const capabilityId = <Discovery.CapabilityInterfaces>capabilityKey;
-            const capabilityState = capabilities[capabilityId];
-            const handler = handlers[capabilityId];
-            if (handler && capabilityState) {
-                const capValue = handler.getCapability(<any>capabilityState);
-                return {
-                    type: 'AlexaInterface',
-                    version: '3',
-                    ...capValue
-                }
-            } else {
-                throw 'Missing Handler for Capability ' + capabilityId;
-            }
-        });
     }
 }
 

@@ -120,18 +120,14 @@ class SyncHandler extends AsyncHandler {
                         metadata: {
                             reported: {
                                 endpoints: {
-                                    [endpointId]: {
-                                        states: metadata
-                                    }
+                                    [endpointId]: metadata
                                 }
                             }
                         },
                         state: {
                             reported: {
                                 endpoints: {
-                                    [endpointId]: {
-                                        states: parsedPayload.stateChange
-                                    }
+                                    [endpointId]: parsedPayload.stateChange
                                 }
                             }
                         }

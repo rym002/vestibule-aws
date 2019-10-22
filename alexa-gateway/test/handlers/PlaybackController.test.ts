@@ -107,7 +107,7 @@ describe('PlaybackController', function () {
         context('PLAYING', function () {
             before(async function () {
                 await directiveMocks(emptyParameters);
-                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing }, capabilities, localEndpoint, true, vestibuleClientId);
+                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing }, localEndpoint, true, vestibuleClientId);
             })
             after(() => {
                 resetDirectiveMocks()
@@ -170,7 +170,7 @@ describe('PlaybackController', function () {
         context('PAUSED', function () {
             before(async function () {
                 await directiveMocks(emptyParameters);
-                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.paused }, capabilities, localEndpoint, true, vestibuleClientId);
+                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.paused }, localEndpoint, true, vestibuleClientId);
             })
             after(() => {
                 resetDirectiveMocks()
@@ -233,7 +233,7 @@ describe('PlaybackController', function () {
         context('STOPPED', function () {
             before(async function () {
                 await directiveMocks(emptyParameters);
-                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.stopped }, capabilities, localEndpoint, true, vestibuleClientId);
+                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.stopped }, localEndpoint, true, vestibuleClientId);
             })
             after(() => {
                 resetDirectiveMocks()
@@ -274,7 +274,7 @@ describe('PlaybackController', function () {
         })
         context('Power Off', function () {
             before(async function () {
-                await setupPoweredOff(capabilities);
+                await setupPoweredOff();
             })
             after(() => {
                 resetDirectiveMocks()
@@ -286,7 +286,7 @@ describe('PlaybackController', function () {
         })
         context('Invalid Endpoint', function () {
             before(async function () {
-                await setupInvalidEndpoint(capabilities);
+                await setupInvalidEndpoint();
             })
             after(() => {
                 resetDirectiveMocks()
@@ -298,7 +298,7 @@ describe('PlaybackController', function () {
     })
     context(('disconnected bridge'), function () {
         before(async function () {
-            await setupDisconnectedBridge(capabilities);
+            await setupDisconnectedBridge();
         })
         after(() => {
             resetDirectiveMocks()
