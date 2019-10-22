@@ -311,7 +311,8 @@ Resources:
           -
             DynamoDBv2:
               RoleArn: !GetAtt VestibuleIotRuleRole.Arn
-              PutItem: !Select [1, !Split [ "/", !GetAtt EndpointCapabilitiesTable.Arn]]
+              PutItem: 
+                TableName: !Select [1, !Split [ "/", !GetAtt EndpointCapabilitiesTable.Arn]]
         Description: Update DynamoDB table with endpoint capabilities
         RuleDisabled: false
         AwsIotSqlVersion: 2016-03-23
@@ -331,7 +332,8 @@ Resources:
           -
             DynamoDBv2:
               RoleArn: !GetAtt VestibuleIotRuleRole.Arn
-              PutItem: !Select [1, !Split [ "/", !GetAtt EndpointInfoTable.Arn]]
+              PutItem: 
+                TableName: !Select [1, !Split [ "/", !GetAtt EndpointInfoTable.Arn]]
         Description: Update DynamoDB table with endpoint info
         RuleDisabled: false
         AwsIotSqlVersion: 2016-03-23
