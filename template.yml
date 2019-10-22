@@ -368,8 +368,7 @@ Resources:
             Resource: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/vestibule-bridge-*/shadow/update
           -
             Effect: Allow
-            Action:
-              - dynamodb:PutItem
+            Action: dynamodb:PutItem
             Resource:
               - !GetAtt EndpointCapabilitiesTable.Arn
               - !GetAtt EndpointInfoTable.Arn
