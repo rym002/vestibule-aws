@@ -3,7 +3,7 @@ import { AlexaEndpoint, DirectiveErrorResponse, EndpointMetadata, EndpointState,
 import * as _ from 'lodash';
 import { contextReporters, DirectiveHandler, DirectiveMessage, DirectiveResponseByNamespace, SHADOW_PREFIX } from '.';
 import { ensureDeviceActive, getShadow, sendMessage, TopicResponse } from '../iot';
-import { CapabilityHandler, EndpointCapabilitiesRecord } from './Discovery';
+import { CapabilityHandler, EndpointRecord } from './Discovery';
 
 type EndpointNamespaces = {
     [NS in keyof DirectiveMessage]:
@@ -102,7 +102,7 @@ export abstract class DefaultEndpointHandler<NS extends EndpointNamespaces> impl
 type DirectiveCapabilities = Extract<EndpointNamespaces, Discovery.CapabilityInterfaces>
 
 export abstract class DefaultEndpointCapabilityHandler<NS extends DirectiveCapabilities> extends DefaultEndpointHandler<NS> implements CapabilityHandler<NS> {
-    abstract getCapability(capabilities: NonNullable<SubType<EndpointCapabilitiesRecord, NS>>): SubType<Discovery.NamedCapabilities, NS>;
+    abstract getCapability(capabilities: NonNullable<SubType<EndpointRecord, NS>>): SubType<Discovery.NamedCapabilities, NS>;
 }
 
 export abstract class DefaultIotEndpointHandler<NS extends DirectiveCapabilities> extends DefaultEndpointCapabilityHandler<NS> {

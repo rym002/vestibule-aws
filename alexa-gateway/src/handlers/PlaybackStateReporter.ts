@@ -1,6 +1,6 @@
 import { Alexa, Discovery, PlaybackStateReporter } from '@vestibule-link/alexa-video-skill-types';
 import { EndpointState, EndpointStateMetadata, SubType } from '@vestibule-link/iot-types';
-import { CapabilityHandler, EndpointCapabilitiesRecord } from './Discovery';
+import { CapabilityHandler, EndpointRecord } from './Discovery';
 import { ContextPropertyReporter, EndpointStateMetadataValue, EndpointStateValue, NamedContextValue, shadowToDate } from './Endpoint';
 
 type DirectiveNamespace = PlaybackStateReporter.NamespaceType;
@@ -19,7 +19,7 @@ class Handler implements CapabilityHandler<DirectiveNamespace>, ContextPropertyR
             timeOfSample: shadowToDate(metadata)
         }
     }
-    getCapability(capabilities: NonNullable<SubType<EndpointCapabilitiesRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
+    getCapability(capabilities: NonNullable<SubType<EndpointRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
         return {
             interface: namespace,
             retrievable: true,

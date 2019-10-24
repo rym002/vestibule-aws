@@ -1,7 +1,7 @@
 import { Alexa, Discovery, Launcher, Video } from '@vestibule-link/alexa-video-skill-types';
 import { DirectiveErrorResponse, EndpointState, EndpointStateMetadata, ErrorHolder, SubType } from '@vestibule-link/iot-types';
 import { DirectiveMessage } from '.';
-import { EndpointCapabilitiesRecord } from './Discovery';
+import { EndpointRecord } from './Discovery';
 import { ContextPropertyReporter, createAlexaResponse, DefaultEndpointOnHandler, EndpointStateMetadataValue, EndpointStateValue, MessageHandlingFlags, NamedContextValue, shadowToDate } from "./Endpoint";
 
 type DirectiveNamespace = Launcher.NamespaceType;
@@ -9,7 +9,7 @@ const namespace: DirectiveNamespace = Launcher.namespace;
 
 class Handler extends DefaultEndpointOnHandler<DirectiveNamespace> implements ContextPropertyReporter<DirectiveNamespace> {
     createResponse = createAlexaResponse;
-    getCapability(capabilities: NonNullable<SubType<EndpointCapabilitiesRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
+    getCapability(capabilities: NonNullable<SubType<EndpointRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
         return {
             interface: namespace
         }

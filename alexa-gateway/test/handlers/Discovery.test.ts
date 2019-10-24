@@ -17,44 +17,32 @@ describe('Discovery', function () {
         await directiveMocks(emptyParameters);
         mockAwsWithSpy<DynamoDB.Types.QueryInput, DynamoDB.Types.QueryOutput>('DynamoDB', 'query', (req) => {
             if (req.ExpressionAttributeValues![':user_id'].S == vestibuleClientId) {
-                if (req.TableName == 'vestibule_endpoint_info') {
-                    return {
-                        Items: [
-                            {
-                                description: {
-                                    S: 'test desc'
-                                },
-                                displayCategories: {
-                                    SS: ["TV"]
-                                },
-                                endpoint_id: {
-                                    S: generateEndpointId(localEndpoint)
-                                },
-                                friendlyName: {
-                                    S: 'My Test Endpoint'
-                                },
-                                manufacturerName: {
-                                    S: 'Mocking'
-                                }
+                return {
+                    Items: [
+                        {
+                            description: {
+                                S: 'test desc'
+                            },
+                            displayCategories: {
+                                SS: ["TV"]
+                            },
+                            endpointId: {
+                                S: generateEndpointId(localEndpoint)
+                            },
+                            friendlyName: {
+                                S: 'My Test Endpoint'
+                            },
+                            manufacturerName: {
+                                S: 'Mocking'
+                            },
+                            'Alexa.PlaybackController': {
+                                SS: [
+                                    'PLAY'
+                                ]
+                            }
 
-                            }
-                        ]
-                    }
-                } else {
-                    return {
-                        Items: [
-                            {
-                                endpoint_id: {
-                                    S: generateEndpointId(localEndpoint)
-                                },
-                                'Alexa.PlaybackController':{
-                                    SS:[
-                                        'PLAY'
-                                    ]
-                                }
-                            }
-                        ]
-                    }
+                        }
+                    ]
                 }
             }
             return {

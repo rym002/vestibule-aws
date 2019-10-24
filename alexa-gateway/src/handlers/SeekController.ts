@@ -2,14 +2,14 @@ import { Discovery, SeekController } from '@vestibule-link/alexa-video-skill-typ
 import { EndpointState, LocalEndpoint, SubType } from '@vestibule-link/iot-types';
 import { DirectiveMessage, DirectiveResponseByNamespace } from '.';
 import { TopicResponse } from '../iot';
-import { EndpointCapabilitiesRecord } from './Discovery';
+import { EndpointRecord } from './Discovery';
 import { DefaultNotStoppedHandler, MessageHandlingFlags, TrackedEndpointShadow } from './Endpoint';
 
 type DirectiveNamespace = SeekController.NamespaceType;
 const namespace: DirectiveNamespace = SeekController.namespace;
 
 class Handler extends DefaultNotStoppedHandler<DirectiveNamespace> {
-    getCapability(capabilities: NonNullable<SubType<EndpointCapabilitiesRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
+    getCapability(capabilities: NonNullable<SubType<EndpointRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
         return {
             interface: namespace
         }

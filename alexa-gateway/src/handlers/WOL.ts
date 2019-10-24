@@ -1,14 +1,14 @@
 import { Discovery, Event, Message, WakeOnLANController } from '@vestibule-link/alexa-video-skill-types';
 import { SubType } from '@vestibule-link/iot-types';
 import authorization from './Authorization';
-import { CapabilityHandler, EndpointCapabilitiesRecord } from './Discovery';
+import { CapabilityHandler, EndpointRecord } from './Discovery';
 import { convertToContext, TrackedEndpointShadow } from './Endpoint';
 
 type DirectiveNamespace = WakeOnLANController.NamespaceType;
 const namespace: DirectiveNamespace = WakeOnLANController.namespace;
 
 class Handler implements CapabilityHandler<DirectiveNamespace>{
-    getCapability(capabilities: NonNullable<SubType<EndpointCapabilitiesRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
+    getCapability(capabilities: NonNullable<SubType<EndpointRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
         return {
             interface: namespace,
             configuration: {

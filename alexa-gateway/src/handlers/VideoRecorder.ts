@@ -2,7 +2,7 @@ import { Alexa, Discovery, Video, VideoRecorder } from "@vestibule-link/alexa-vi
 import { DirectiveErrorResponse, EndpointState, EndpointStateMetadata, ErrorHolder, getShadowEndpoint, getShadowEndpointMetadata, LocalEndpoint, SubType } from "@vestibule-link/iot-types";
 import { DirectiveMessage, DirectiveResponseByNamespace } from ".";
 import { TopicResponse } from "../iot";
-import { EndpointCapabilitiesRecord } from "./Discovery";
+import { EndpointRecord } from "./Discovery";
 import { ContextPropertyReporter, convertToContext, DefaultEndpointOnHandler, EndpointStateMetadataValue, EndpointStateValue, MessageHandlingFlags, NamedContextValue, shadowToDate, TrackedEndpointShadow } from "./Endpoint";
 
 type DirectiveNamespace = VideoRecorder.NamespaceType;
@@ -22,7 +22,7 @@ class Handler extends DefaultEndpointOnHandler<DirectiveNamespace> implements Co
         }
     }
 
-    getCapability(capabilities: NonNullable<SubType<EndpointCapabilitiesRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
+    getCapability(capabilities: NonNullable<SubType<EndpointRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
         return {
             interface: namespace
         }

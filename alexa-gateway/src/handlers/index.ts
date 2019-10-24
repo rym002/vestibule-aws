@@ -1,18 +1,18 @@
-import { Message, Directive } from '@vestibule-link/alexa-video-skill-types';
-import { SubType, Shadow, DirectiveResponse, DirectiveErrorResponse, ErrorHolder } from '@vestibule-link/iot-types';
+import { Directive, Message } from '@vestibule-link/alexa-video-skill-types';
+import { DirectiveErrorResponse, DirectiveResponse, ErrorHolder, SubType } from '@vestibule-link/iot-types';
+import Alexa from './Alexa';
+import Authorization from './Authorization';
 import ChannelController from './ChannelController';
+import Discovery from './Discovery';
+import { ContextPropertyReporters } from './Endpoint';
+import EndpointHealth from './EndpointHealth';
+import Launcher from './Launcher';
 import PlaybackController from './PlaybackController';
+import PlaybackStateReporter from './PlaybackStateReporter';
 import PowerController from './PowerController';
 import RecordController from './RecordController';
-import SeekController from './SeekController';
-import Discovery from './Discovery';
-import Authorization from './Authorization'
-import Alexa from './Alexa'
-import PlaybackStateReporter from './PlaybackStateReporter';
-import EndpointHealth from './EndpointHealth';
-import { ContextPropertyReporters } from './Endpoint';
 import RemoteVideoPlayer from './RemoteVideoPlayer';
-import Launcher from './Launcher';
+import SeekController from './SeekController';
 import VideoRecorder from './VideoRecorder';
 
 export const SHADOW_PREFIX = 'vestibule-bridge-'

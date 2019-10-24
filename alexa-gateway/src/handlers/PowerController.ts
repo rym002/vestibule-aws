@@ -1,7 +1,7 @@
 import { Alexa, Discovery, PowerController } from '@vestibule-link/alexa-video-skill-types';
 import { EndpointState, EndpointStateMetadata, LocalEndpoint, SubType } from '@vestibule-link/iot-types';
 import { DirectiveMessage, DirectiveResponseByNamespace } from '.';
-import { EndpointCapabilitiesRecord } from './Discovery';
+import { EndpointRecord } from './Discovery';
 import { ContextPropertyReporter, createAlexaResponse, DefaultIotEndpointHandler, EndpointStateMetadataValue, EndpointStateValue, MessageHandlingFlags, NamedContextValue, shadowToDate, TrackedEndpointShadow } from './Endpoint';
 import wol from './WOL';
 
@@ -28,7 +28,7 @@ class Handler extends DefaultIotEndpointHandler<DirectiveNamespace> implements C
 
     }
 
-    getCapability(capabilities: NonNullable<SubType<EndpointCapabilitiesRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
+    getCapability(capabilities: NonNullable<SubType<EndpointRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
         return {
             interface: namespace,
             retrievable: true,

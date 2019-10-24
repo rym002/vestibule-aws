@@ -1,7 +1,7 @@
 import { Discovery, PlaybackController, PlaybackStateReporter } from "@vestibule-link/alexa-video-skill-types";
 import { EndpointState, SubType } from "@vestibule-link/iot-types";
 import { DirectiveMessage } from ".";
-import { EndpointCapabilitiesRecord } from "./Discovery";
+import { EndpointRecord } from "./Discovery";
 import { createAlexaResponse, DefaultNotStoppedHandler, MessageHandlingFlags } from "./Endpoint";
 
 type DirectiveNamespace = PlaybackController.NamespaceType;
@@ -9,7 +9,7 @@ const namespace: DirectiveNamespace = PlaybackController.namespace;
 
 class Handler extends DefaultNotStoppedHandler<DirectiveNamespace> {
     createResponse = createAlexaResponse;
-    getCapability(capabilities: NonNullable<SubType<EndpointCapabilitiesRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
+    getCapability(capabilities: NonNullable<SubType<EndpointRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
         return {
             interface: namespace,
             supportedOperations: capabilities.SS!

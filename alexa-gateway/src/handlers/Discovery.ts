@@ -18,7 +18,7 @@ import WakeOnLANController from './WOL';
 type DirectiveNamespace = Discovery.NamespaceType;
 
 export interface CapabilityHandler<NS extends Discovery.CapabilityInterfaces> {
-    getCapability(capabilities: NonNullable<SubType<EndpointCapabilitiesRecord, NS>>): SubType<Discovery.NamedCapabilities, NS>
+    getCapability(capabilities: NonNullable<SubType<EndpointRecord, NS>>): SubType<Discovery.NamedCapabilities, NS>
 }
 
 type CapabilityHandlers = {
@@ -44,12 +44,12 @@ interface EndpointKey {
     user_id: {
         S: DynamoDB.StringAttributeValue
     }
-    endpoint_id: {
+    endpointId: {
         S: DynamoDB.StringAttributeValue
     }
 }
 
-type EndpointInfoRecord = EndpointKey & Pick<{
+export type EndpointRecord = EndpointKey & {
     [K in keyof EndpointInfo]:
     EndpointInfo[K] extends string
     ? {
@@ -66,9 +66,7 @@ type EndpointInfoRecord = EndpointKey & Pick<{
             }
         }
     }
-}, Exclude<keyof EndpointInfo, 'endpointId'>>
-
-export type EndpointCapabilitiesRecord = EndpointKey & {
+} & {
     [K in keyof EndpointCapability]:
     EndpointCapability[K] extends undefined
     ? never
@@ -83,8 +81,7 @@ export type EndpointCapabilitiesRecord = EndpointKey & {
     : never
 }
 
-const ENDPOINT_CAPABILITITES_TABLE = process.env['endpoint_capabilities_table'] || 'vestibule_endpoint_capabilities';
-const ENDPOINT_INFO_TABLE = process.env['endpoint_info_table'] || 'vestibule_endpoint_info';
+const ENDPOINT_TABLE = process.env['endpoint_table'] || 'vestibule_endpoint';
 
 class Handler implements DirectiveHandler<DirectiveNamespace>{
     private _db: DynamoDB | undefined;
@@ -97,18 +94,18 @@ class Handler implements DirectiveHandler<DirectiveNamespace>{
     getScope(message: SubType<DirectiveMessage, DirectiveNamespace>): Message.Scope {
         return message.payload.scope;
     }
-    private convertEndpoint(infoRecord: EndpointInfoRecord, capabilitiesRecord: EndpointCapabilitiesRecord): Discovery.Endpoint {
+    private convertEndpoint(endpointRecord: EndpointRecord): Discovery.Endpoint {
         return {
-            description: infoRecord.description.S,
-            displayCategories: infoRecord.displayCategories.SS,
-            endpointId: infoRecord.endpoint_id.S,
-            friendlyName: infoRecord.friendlyName.S,
-            manufacturerName: infoRecord.manufacturerName.S,
-            capabilities: this.convertEndpointCapability(capabilitiesRecord)
+            description: endpointRecord.description.S,
+            displayCategories: endpointRecord.displayCategories.SS,
+            endpointId: endpointRecord.endpointId.S,
+            friendlyName: endpointRecord.friendlyName.S,
+            manufacturerName: endpointRecord.manufacturerName.S,
+            capabilities: this.convertEndpointCapability(endpointRecord)
         }
     }
 
-    private convertEndpointCapability(record: EndpointCapabilitiesRecord): Discovery.Capabilities[] {
+    private convertEndpointCapability(record: EndpointRecord): Discovery.Capabilities[] {
         const ret = _.map(handlers, (handler, key) => {
             const capKey = <Discovery.CapabilityInterfaces>key
             const recValue = record[capKey]
@@ -138,7 +135,7 @@ class Handler implements DirectiveHandler<DirectiveNamespace>{
             KeyConditionExpression: 'user_id = :user_id'
         }).promise();
         const ret = _.keyBy(<T[]>endpointInfos.Items, (item) => {
-            return item.endpoint_id.S
+            return item.endpointId.S
         })
         console.timeEnd(logType);
         return ret;
@@ -164,11 +161,9 @@ class Handler implements DirectiveHandler<DirectiveNamespace>{
         }
     }
     private async getResponsePayload(userSub: string): Promise<Discovery.ResponsePayload> {
-        const endpointInfoDict = await this.getEndpointData<EndpointInfoRecord>(userSub, ENDPOINT_INFO_TABLE)
-        const endpointCapsDict = await this.getEndpointData<EndpointCapabilitiesRecord>(userSub, ENDPOINT_CAPABILITITES_TABLE)
-        const endpoints = _.map(endpointInfoDict, (endpointInfo, endpointId) => {
-            const endpointCaps = endpointCapsDict[endpointId] || {};
-            return this.convertEndpoint(endpointInfo, endpointCaps)
+        const endpointDict = await this.getEndpointData<EndpointRecord>(userSub, ENDPOINT_TABLE)
+        const endpoints = _.map(endpointDict, (endpoint, endpointId) => {
+            return this.convertEndpoint(endpoint)
         })
         return {
             endpoints: endpoints
