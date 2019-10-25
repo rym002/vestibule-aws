@@ -136,6 +136,9 @@ Resources:
             Resource:
               - !GetAtt AuthTokensTable.Arn
               - !GetAtt RefreshTokensTable.Arn
+            Action:
+              - dynamodb:Query
+            Resource:
               - !GetAtt EndpointTable.Arn
           -
             Effect: Allow
