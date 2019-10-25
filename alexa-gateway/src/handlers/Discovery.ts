@@ -57,7 +57,9 @@ export type EndpointRecord = EndpointKey & {
     }
     : K extends 'displayCategories'
     ? {
-        SS: Discovery.DisplayCategoryType[]
+        L: {
+            S: Discovery.DisplayCategoryType
+        }[]
     }
     : {
         M: {
@@ -67,22 +69,32 @@ export type EndpointRecord = EndpointKey & {
         }
     }
 } & {
-    [K in keyof EndpointCapability]:
-    EndpointCapability[K] extends undefined
-    ? never
-    : EndpointCapability[K] extends string[] | undefined
-    ? {
-        SS: EndpointCapability[K]
+        [K in keyof Required<EndpointCapability>]?:
+        Required<EndpointCapability>[K] extends never
+        ? never
+        : Required<EndpointCapability>[K] extends string[]
+        ? {
+            L: {
+                S: Required<EndpointCapability>[K][number]
+            }[]
+        }
+        : Required<EndpointCapability>[K] extends boolean
+        ? {
+            B: DynamoDB.BooleanAttributeValue
+        }
+        : never
     }
-    : EndpointCapability[K] extends boolean | undefined
-    ? {
-        B: DynamoDB.BooleanAttributeValue
-    }
-    : never
-}
 
 const ENDPOINT_TABLE = process.env['endpoint_table'] || 'vestibule_endpoint';
 
+export function listToTypedStringArray<T extends string>(values?: { S: T }[]): T[] {
+    if (values) {
+        return values.map(value => {
+            return value.S
+        })
+    }
+    return []
+}
 class Handler implements DirectiveHandler<DirectiveNamespace>{
     private _db: DynamoDB | undefined;
     get db() {
@@ -97,7 +109,7 @@ class Handler implements DirectiveHandler<DirectiveNamespace>{
     private convertEndpoint(endpointRecord: EndpointRecord): Discovery.Endpoint {
         return {
             description: endpointRecord.description.S,
-            displayCategories: endpointRecord.displayCategories.SS,
+            displayCategories: listToTypedStringArray(endpointRecord.displayCategories.L),
             endpointId: endpointRecord.endpointId.S,
             friendlyName: endpointRecord.friendlyName.S,
             manufacturerName: endpointRecord.manufacturerName.S,
