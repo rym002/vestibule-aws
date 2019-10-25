@@ -293,9 +293,8 @@ Resources:
         RuleDisabled: false
         AwsIotSqlVersion: 2016-03-23
         Sql: >-
-          SELECT substring(topic(2),length('vestibule-bridge-')) as user_id, concat(topic(5),'@',topic(6)) as endpoint_id, * 
-          FROM 'vestibule-bridge/+/alexa/endpoint/+/+' 
-          WHERE startswith(clientId,"vestibule-bridge-")
+          SELECT substring(topic(2),length('vestibule-bridge-')) as user_id, concat(topic(5),'@',topic(6)) as endpointId, * 
+          FROM 'vestibule-bridge/+/alexa/endpoint/+/+'
   VestibuleIotRuleRole:
     Type: AWS::IAM::Role
     Properties:
