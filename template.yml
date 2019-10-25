@@ -232,8 +232,7 @@ Resources:
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${!iot:Connection.Thing.ThingTypeName}/${!iot:Connection.Thing.ThingName}/alexa/event/*
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/update
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/get
-              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${!iot:Connection.Thing.ThingTypeName}/${!iot:Connection.Thing.ThingName}/alexa/capabilities/*
-              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${!iot:Connection.Thing.ThingTypeName}/${!iot:Connection.Thing.ThingName}/alexa/info/*
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${!iot:Connection.Thing.ThingTypeName}/${!iot:Connection.Thing.ThingName}/alexa/endpoint/*
           -
             Effect: Allow
             Action: 
