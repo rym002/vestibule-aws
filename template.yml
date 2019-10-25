@@ -280,7 +280,7 @@ Resources:
     Properties:
       RuleName:
         !Sub
-        - ${StackName}_EndpointUpdate
+        - ${StackName}_EndpointSettingUpdate
         - { StackName: !Join ["_", !Split [ "-", !Ref "AWS::StackName"]] }
       TopicRulePayload:
         Actions:
