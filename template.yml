@@ -126,16 +126,12 @@ Resources:
               - dynamodb:BatchWriteItem
               - dynamodb:PutItem
               - dynamodb:BatchGetItem
+              - dynamodb:GetItem
             Resource:
               - !GetAtt AuthTokensTable.Arn
               - !GetAtt RefreshTokensTable.Arn
           -
             Effect: Allow
-            Action:
-              - dynamodb:GetItem
-            Resource:
-              - !GetAtt AuthTokensTable.Arn
-              - !GetAtt RefreshTokensTable.Arn
             Action:
               - dynamodb:Query
             Resource:
@@ -182,7 +178,6 @@ Resources:
             Effect: Allow
             Action:
               - logs:CreateLogStream
-              - logs:PutLogEvents
             Resource:
               - !Sub 
                 - arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*
