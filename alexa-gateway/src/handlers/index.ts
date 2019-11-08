@@ -14,6 +14,7 @@ import RecordController from './RecordController';
 import RemoteVideoPlayer from './RemoteVideoPlayer';
 import SeekController from './SeekController';
 import VideoRecorder from './VideoRecorder';
+import KeypadController from './KeypadController'
 
 export const SHADOW_PREFIX = 'vestibule-bridge-'
 
@@ -56,7 +57,8 @@ const handlers: DirectiveHandlers = {
     'Alexa': Alexa,
     'Alexa.RemoteVideoPlayer': RemoteVideoPlayer,
     'Alexa.Launcher': Launcher,
-    'Alexa.VideoRecorder': VideoRecorder
+    'Alexa.VideoRecorder': VideoRecorder,
+    'Alexa.KeypadController': KeypadController
 };
 
 export function findDirectiveHandler<NS extends Directive.Namespaces>(namespace: NS): DirectiveHandler<NS> {

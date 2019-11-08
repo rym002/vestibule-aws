@@ -14,6 +14,7 @@ import RemoteVideoPlayer from './RemoteVideoPlayer';
 import SeekController from './SeekController';
 import VideoRecorder from './VideoRecorder';
 import WakeOnLANController from './WOL';
+import KeypadController from './KeypadController'
 
 type DirectiveNamespace = Discovery.NamespaceType;
 
@@ -36,7 +37,8 @@ const handlers: CapabilityHandlers = {
     'Alexa.WakeOnLANController': WakeOnLANController,
     'Alexa.RemoteVideoPlayer': RemoteVideoPlayer,
     'Alexa.Launcher': Launcher,
-    'Alexa.VideoRecorder': VideoRecorder
+    'Alexa.VideoRecorder': VideoRecorder,
+    'Alexa.KeypadController': KeypadController
 }
 
 interface EndpointKey {

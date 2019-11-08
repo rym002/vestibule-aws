@@ -5,7 +5,6 @@ import { assert, expect, use } from 'chai';
 import * as _ from 'lodash';
 import 'mocha';
 import * as nock from 'nock';
-import { SinonSpy } from 'sinon';
 import { handler } from '../../src/handler';
 import { DeviceTokenResponse, GrantRequest, GrantTypes, RefreshTokenRequest } from '../../src/handlers/Authorization';
 import { mockAwsWithSpy } from '../mock/AwsMock';
@@ -16,6 +15,8 @@ import { fakeCallback, FakeContext } from '../mock/LambdaMock';
 import { verifyVideoErrorResponse } from './TestHelper';
 import authorizationHandler from '../../src/handlers/Authorization'
 import * as chaiAsPromised from 'chai-as-promised';
+import { SinonSpy } from 'sinon';
+import { BatchWriteItemOutput, BatchWriteItemInput } from 'aws-sdk/clients/dynamodb';
 
 use(chaiAsPromised);
 
@@ -117,7 +118,7 @@ describe('Authorization', function (){
         resetDirectiveMocks();
     })
     context('AcceptGrant', function (){
-        let dynamoSpy: SinonSpy | undefined
+        let dynamoSpy: SinonSpy<[BatchWriteItemInput, (err: any, data: BatchWriteItemOutput | undefined) => void], void> | undefined
         before(function (){
             const dynamoMatcher = _.matches(<DynamoDB.Types.BatchWriteItemInput>{
                 RequestItems: {
@@ -285,14 +286,12 @@ describe('Authorization', function (){
                 payload: {}
             }
         }
-        let dynamoBatchWriteSpy: SinonSpy | undefined;
         beforeEach(function (){
-            dynamoBatchWriteSpy = mockAwsWithSpy<DynamoDB.Types.BatchWriteItemInput, DynamoDB.Types.BatchGetItemOutput>('DynamoDB', 'batchWriteItem', (req) => {
+            this.currentTest!['dynamoBatchWriteSpy'] = mockAwsWithSpy<DynamoDB.Types.BatchWriteItemInput, DynamoDB.Types.BatchGetItemOutput>('DynamoDB', 'batchWriteItem', (req) => {
                 return {
 
                 }
             })
-
         })
         afterEach(function (){
             AWSMock.restore('DynamoDB', 'batchWriteItem');
@@ -320,7 +319,7 @@ describe('Authorization', function (){
                     }
                 })
 
-            assert(dynamoBatchWriteSpy!.called);
+            assert(this.test!['dynamoBatchWriteSpy'].called);
         })
         it('should throw exception on alexa error', async function (){
             const errorResponse: EventGateway.AlexaErrorResponse = {
@@ -345,7 +344,7 @@ describe('Authorization', function (){
                     }
                 })
 
-            assert(dynamoBatchWriteSpy!.notCalled);
+            assert(this.test!['dynamoBatchWriteSpy'].notCalled);
 
         })
         it('should send to alexa', async function (){
