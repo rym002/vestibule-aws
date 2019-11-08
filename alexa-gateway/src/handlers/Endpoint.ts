@@ -206,8 +206,8 @@ export function createAlexaResponse<NS extends AlexaResponseNamespaces>(message:
         const endpointShadow = getShadowEndpoint(iotResp.shadow, localEndpoint);
         const endpointMetadata = getShadowEndpointMetadata(iotResp.shadow, localEndpoint);
         if (endpointShadow && endpointMetadata) {
-            trackedEndpoint.endpoint = endpointShadow;
-            trackedEndpoint.metadata = endpointMetadata;
+            trackedEndpoint.endpoint = { ...trackedEndpoint.endpoint, ...endpointShadow };
+            trackedEndpoint.metadata = { ...trackedEndpoint.metadata, ...endpointMetadata };
         }
     }
     const messageContext = convertToContext(trackedEndpoint);
@@ -249,7 +249,7 @@ export function convertToContext(trackedEndpoint: TrackedEndpointShadow): Alexa.
             return stateProperties !== undefined && stateProperties.length > 0;
         }).reduce((prev, current) => {
             return prev.concat(current);
-        },[])
+        }, [])
         return {
             properties: contextStates
         }
