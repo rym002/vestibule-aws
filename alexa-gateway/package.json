@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@types/aws-iot-device-sdk": "^2.2.0",
-    "@types/aws-lambda": "^8.10.34",
+    "@types/aws-lambda": "^8.10.35",
     "@types/chai": "^4.2.4",
     "@types/chai-as-promised": "^7.1.2",
     "@types/lodash": "^4.14.146",
@@ -25,7 +25,7 @@
     "@types/nock": "^10.0.3",
     "@types/node-jose": "^1.1.1",
     "@types/sinon": "^7.5.0",
-    "aws-sdk": "^2.567.0",
+    "aws-sdk": "^2.568.0",
     "aws-sdk-mock": "^4.5.0",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
@@ -37,7 +37,7 @@
     "typescript": "^3.7.2"
   },
   "dependencies": {
-    "@vestibule-link/alexa-video-skill-types": "^1.1.8",
+    "@vestibule-link/alexa-video-skill-types": "^1.1.12",
     "@vestibule-link/iot-types": "^2.0.3",
     "aws-iot-device-sdk": "^2.2.1",
     "axios": "^0.18.1",

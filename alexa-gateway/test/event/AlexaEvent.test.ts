@@ -54,7 +54,14 @@ describe('AlexaEvent', function () {
                 messageId: messageId,
                 payloadVersion: '3'
             },
-            payload: {}
+            payload: {},
+            endpoint: {
+                endpointId: 'testEndpointId',
+                scope: {
+                    type: 'BearerToken',
+                    token: ''
+                }
+            }
         }
     }
     it('should delete the token if SKILL_DISABLED_EXCEPTION', async function () {
@@ -76,7 +83,7 @@ describe('AlexaEvent', function () {
 
         mockAlexaGateway(testEvent, 'testToken', 401, errorResponse)
 
-        await expect(sendAlexaEvent(testEvent, vestibuleClientId)).to.rejected
+        await expect(sendAlexaEvent(testEvent, vestibuleClientId, 'testEndpointId')).to.rejected
             .and.to.be.eventually.have.property('message', errorResponse.payload.message)
 
         assert(dynamoBatchWriteSpy.called);
@@ -96,11 +103,11 @@ describe('AlexaEvent', function () {
 
         mockAlexaGateway(testEvent, 'testToken', 401, errorResponse)
 
-        await expect(sendAlexaEvent(testEvent, vestibuleClientId)).to.rejected
+        await expect(sendAlexaEvent(testEvent, vestibuleClientId, 'testEndpointId')).to.rejected
             .and.to.be.eventually.have.property('message', errorResponse.payload.message)
     })
     it('should send to alexa', async function () {
         const alexaGatewaySpy = mockAlexaGateway(testEvent, 'testToken', 200, {});
-        await sendAlexaEvent(testEvent, vestibuleClientId);
+        await sendAlexaEvent(testEvent, vestibuleClientId, 'testEndpointId');
     })
 })
