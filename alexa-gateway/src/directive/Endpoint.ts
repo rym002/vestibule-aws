@@ -1,6 +1,6 @@
 import { Alexa, Discovery, Message, PlaybackStateReporter, PowerController } from '@vestibule-link/alexa-video-skill-types';
-import { AlexaEndpoint, DirectiveErrorResponse, EndpointMetadata, EndpointState, EndpointStateMetadata, ErrorHolder, getShadowEndpoint, getShadowEndpointMetadata, LocalEndpoint, ShadowMetadata, SubType, toLocalEndpoint } from '@vestibule-link/iot-types';
-import * as _ from 'lodash';
+import { AlexaEndpoint, DirectiveErrorResponse, EndpointMetadata, EndpointState, EndpointStateMetadata, ErrorHolder, getShadowEndpoint, getShadowEndpointMetadata, LocalEndpoint, ShadowMetadata, SubType, toLocalEndpoint, ProvidersMetadata } from '@vestibule-link/iot-types';
+import { cloneDeepWith, isObject, map } from 'lodash'
 import { contextReporters, DirectiveHandler, DirectiveMessage, DirectiveResponseByNamespace, SHADOW_PREFIX } from '.';
 import { ensureDeviceActive, getShadow, sendMessage, TopicResponse } from '../iot';
 import { CapabilityHandler, EndpointRecord } from './Discovery';
@@ -221,6 +221,18 @@ export function createAlexaResponse<NS extends AlexaResponseNamespaces>(message:
         }
     }
 }
+export function stateToMetadata(state: EndpointState) {
+    const updateTime = Math.floor(Date.now() / 1000);
+    const metadata: ProvidersMetadata = cloneDeepWith(state, (value, key) => {
+        if (!isObject(value)) {
+            const ret: ShadowMetadata = {
+                timestamp: updateTime
+            }
+            return ret;
+        }
+    })
+    return metadata;
+}
 
 export function convertToContext(trackedEndpoint: TrackedEndpointShadow): Alexa.Context {
     const endpoint = trackedEndpoint.endpoint;
@@ -228,12 +240,12 @@ export function convertToContext(trackedEndpoint: TrackedEndpointShadow): Alexa.
     if (endpoint && endpointMetadata) {
         const states = endpoint;
         const statesMetadata = endpointMetadata;
-        const contextStates = _.map(states, (componentStates, reporterNameKey) => {
+        const contextStates = map(states, (componentStates, reporterNameKey) => {
             const reporterName = <Alexa.ContextInterfaces>reporterNameKey
             const componentMetadata = statesMetadata[reporterName];
             if (componentStates && componentMetadata) {
                 const reporter: ContextPropertyReporter<typeof reporterName> = contextReporters[reporterName];
-                const componentCapabilities = _.map(componentStates, (stateValue, key) => {
+                const componentCapabilities = map(componentStates, (stateValue, key) => {
                     const keyValue = <keyof typeof componentStates>key
                     const statesMetadataValue = componentMetadata[keyValue]
                     const ret = <NamedContextValue<any, any>>reporter.convertToProperty(keyValue, stateValue, statesMetadataValue);

@@ -1,8 +1,7 @@
-import { TopicResponse, getIotParameters, getIotData } from ".";
-import { ResponseMessage, LocalEndpoint, ErrorHolder, SubType, topicConfig, generateTopic, RequestMessage, Shadow, ProvidersMetadata, EndpointState, generateEndpointId, ShadowMetadata } from "@vestibule-link/iot-types";
+import { ErrorHolder, generateEndpointId, generateTopic, LocalEndpoint, RequestMessage, ResponseMessage, Shadow, SubType, topicConfig } from "@vestibule-link/iot-types";
+import { getIotData, getIotParameters, TopicResponse } from ".";
+import { DirectiveMessage, stateToMetadata } from "../directive";
 import { IotReponseHandler } from "./Sync";
-import { DirectiveMessage } from "../directive";
-import * as _ from 'lodash';
 
 export interface TopicHandler {
     sendMessage(message: SubType<DirectiveMessage, any>): Promise<TopicResponse>;
@@ -94,18 +93,6 @@ class SyncHandler extends AsyncHandler {
         })
     }
 
-    private stateToMetadata(state: EndpointState) {
-        const updateTime = Math.floor(Date.now() / 1000);
-        const metadata: ProvidersMetadata = _.cloneDeepWith(state, (value, key) => {
-            if (!_.isObject(value)) {
-                const ret: ShadowMetadata = {
-                    timestamp: updateTime
-                }
-                return ret;
-            }
-        })
-        return metadata;
-    }
     private createResponse(resolve: CallableFunction, reject: CallableFunction) {
         return (payload: any) => {
             const parsedPayload: ResponseMessage<any> = JSON.parse(payload);
@@ -115,7 +102,7 @@ class SyncHandler extends AsyncHandler {
                 let shadow: Shadow | undefined;
                 if (parsedPayload.stateChange) {
                     const endpointId = generateEndpointId(this.localEndpoint);
-                    const metadata = this.stateToMetadata(parsedPayload.stateChange)
+                    const metadata = stateToMetadata(parsedPayload.stateChange)
                     shadow = {
                         metadata: {
                             reported: {

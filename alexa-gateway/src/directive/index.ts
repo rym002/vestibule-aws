@@ -85,3 +85,5 @@ export const contextReporters: ContextPropertyReporters = {
     'Alexa.Launcher': Launcher,
     'Alexa.VideoRecorder': VideoRecorder
 }
+
+export { stateToMetadata } from './Endpoint'
