@@ -1,14 +1,14 @@
-import { Event, Message, Directive, Alexa } from '@vestibule-link/alexa-video-skill-types';
-import { EndpointState, ErrorHolder, generateEndpointId, SubType, EndpointCapability } from "@vestibule-link/iot-types";
+import { Alexa, Directive, Event, Message } from '@vestibule-link/alexa-video-skill-types';
+import { EndpointState, ErrorHolder, generateEndpointId, SubType } from "@vestibule-link/iot-types";
+import { IotData, SSM } from 'aws-sdk';
 import { expect } from 'chai';
-import { generateValidScope } from "../mock/CognitoMock";
-import { localEndpoint, messageId, vestibuleClientId, mockIotDataPublish } from "../mock/IotDataMock";
-import { handler } from '../../src/handler';
-import { fakeCallback, FakeContext } from '../mock/LambdaMock';
-import { directiveMocks, mockEndpointState } from '../mock/DirectiveMocks';
-import { SSM, IotData } from 'aws-sdk';
 import { SinonSandbox } from 'sinon';
-import { MockMqttOperations, mockMqtt } from '../mock/MqttMock';
+import { handler } from '../../src/directive/handler';
+import { generateValidScope } from "../mock/CognitoMock";
+import { directiveMocks, mockEndpointState } from '../mock/DirectiveMocks';
+import { localEndpoint, messageId, mockIotDataPublish, vestibuleClientId } from "../mock/IotDataMock";
+import { fakeCallback, FakeContext } from '../mock/LambdaMock';
+import { mockMqtt, MockMqttOperations } from '../mock/MqttMock';
 
 interface SharedStates {
     playback: {

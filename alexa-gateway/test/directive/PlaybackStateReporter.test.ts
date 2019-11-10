@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import 'mocha';
-import handler from '../../src/handlers/PlaybackStateReporter';
+import handler from '../../src/directive/PlaybackStateReporter';
 
 describe('PlaybackStateReporter', function () {
     it('should map capability', async function () {

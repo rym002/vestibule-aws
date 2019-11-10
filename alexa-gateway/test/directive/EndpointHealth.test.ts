@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import 'mocha';
-import handler from '../../src/handlers/EndpointHealth';
+import handler from '../../src/directive/EndpointHealth';
 
 describe('EndpointHealth', function () {
     it('should map capability', async function () {

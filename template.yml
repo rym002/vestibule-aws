@@ -25,7 +25,7 @@ Resources:
     Type: 'AWS::Serverless::Function'
     Properties:
       CodeUri: alexa-gateway/
-      Handler: dist/handler.handler
+      Handler: dist/directive/handler.handler
       Runtime: nodejs10.x
       FunctionName: !Sub ${AWS::StackName}-AlexaGateway
       Description: 'Vestibule Alexa Gateway'

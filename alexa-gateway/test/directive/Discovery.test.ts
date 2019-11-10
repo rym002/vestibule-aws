@@ -3,7 +3,7 @@ import { DynamoDB } from 'aws-sdk';
 import * as AWSMock from 'aws-sdk-mock';
 import { expect } from 'chai';
 import 'mocha';
-import { handler } from '../../src/handler';
+import { handler } from '../../src/directive/handler';
 import { mockAwsWithSpy } from '../mock/AwsMock';
 import { authenticationProps, generateToken, generateValidScope, getSharedKey } from '../mock/CognitoMock';
 import { directiveMocks } from '../mock/DirectiveMocks';

@@ -1,7 +1,7 @@
 import { TopicResponse, getIotParameters, getIotData } from ".";
 import { ResponseMessage, LocalEndpoint, ErrorHolder, SubType, topicConfig, generateTopic, RequestMessage, Shadow, ProvidersMetadata, EndpointState, generateEndpointId, ShadowMetadata } from "@vestibule-link/iot-types";
 import { IotReponseHandler } from "./Sync";
-import { DirectiveMessage } from "../handlers";
+import { DirectiveMessage } from "../directive";
 import * as _ from 'lodash';
 
 export interface TopicHandler {

@@ -1,6 +1,6 @@
 import { ErrorHolder, LocalEndpoint, ResponseMessage, Shadow } from '@vestibule-link/iot-types';
 import { IotData } from 'aws-sdk';
-import { MessageHandlingFlags } from '../handlers/Endpoint';
+import { MessageHandlingFlags } from '../directive/Endpoint';
 import { findHandler as findShadowHandler } from './Shadow';
 import { findHandler as findTopicHandler } from './Topic';
 import { getParameters } from '../config';

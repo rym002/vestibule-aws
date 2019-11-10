@@ -1,7 +1,7 @@
 import { EndpointCapability, ResponseMessage } from '@vestibule-link/iot-types';
 import 'mocha';
 import { createSandbox, SinonSpy } from 'sinon';
-import wolHandler from '../../src/handlers/WOL';
+import wolHandler from '../../src/directive/WOL';
 import { resetDirectiveMocks } from '../mock/DirectiveMocks';
 import { resetIotDataPublish } from '../mock/IotDataMock';
 import { MockMqttOperations } from '../mock/MqttMock';

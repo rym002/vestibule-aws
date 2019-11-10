@@ -4,7 +4,7 @@ import * as chaiAsPromised from 'chai-as-promised';
 import 'mocha';
 import { createSandbox } from 'sinon';
 import * as event from '../../src/event';
-import { handler } from '../../src/handler';
+import { handler } from '../../src/directive/handler';
 import { generateValidScope } from '../mock/CognitoMock';
 import { messageId, vestibuleClientId } from '../mock/IotDataMock';
 import { fakeCallback, FakeContext } from '../mock/LambdaMock';
