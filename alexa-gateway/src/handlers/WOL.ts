@@ -1,8 +1,8 @@
 import { Discovery, Event, Message, WakeOnLANController } from '@vestibule-link/alexa-video-skill-types';
 import { SubType } from '@vestibule-link/iot-types';
-import authorization from './Authorization';
 import { CapabilityHandler, EndpointRecord, listToTypedStringArray } from './Discovery';
 import { convertToContext, TrackedEndpointShadow } from './Endpoint';
+import { sendAlexaEvent } from '../event';
 
 type DirectiveNamespace = WakeOnLANController.NamespaceType;
 const namespace: DirectiveNamespace = WakeOnLANController.namespace;
@@ -20,10 +20,9 @@ class Handler implements CapabilityHandler<DirectiveNamespace>{
         endpointId: string,
         trackedEndpoint: TrackedEndpointShadow,
         correlationToken: string) {
-        const token = await authorization.getToken(userSub);
         const bearerToken: Message.BearerToken = {
             type: 'BearerToken',
-            token: token
+            token: ''
         }
         const endpoint: Message.EndpointRequest = {
             endpointId: endpointId,
@@ -44,7 +43,7 @@ class Handler implements CapabilityHandler<DirectiveNamespace>{
                 endpoint: endpoint
             }
         }
-        await authorization.sendAlexaEvent(message, token, userSub);
+        await sendAlexaEvent(message, userSub);
     }
 }
 
