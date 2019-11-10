@@ -6,7 +6,7 @@ import { DirectiveMessage, findDirectiveHandler } from '.';
 
 const logger = console.debug;
 
-async function directiveHandler(directive: Directive.Message, context: Context, callback: Callback<any>): Promise<Event.Message> {
+async function directiveHandler(directive: Directive.Message, context: Context, callback: Callback<Event.Message>): Promise<Event.Message> {
     console.time('handler');
     logger('Request: %j', directive);
     const header = directive.directive.header;
@@ -55,4 +55,4 @@ function toDirectiveMessage<NS extends Directive.Namespaces>(message: Directive.
         ...directive
     }
 }
-export const handler: Handler<any, Event.Message> = directiveHandler;
+export const handler: Handler<Directive.Message, Event.Message> = directiveHandler;

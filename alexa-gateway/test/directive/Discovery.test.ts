@@ -10,6 +10,7 @@ import { directiveMocks } from '../mock/DirectiveMocks';
 import { localEndpoint, messageId, vestibuleClientId } from '../mock/IotDataMock';
 import { fakeCallback, FakeContext } from '../mock/LambdaMock';
 import { emptyParameters } from './TestHelper';
+import { Directive } from '@vestibule-link/alexa-video-skill-types';
 
 
 describe('Discovery', function () {
@@ -54,7 +55,7 @@ describe('Discovery', function () {
         AWSMock.restore('DynamoDB', 'query');
     })
     it('should discover from thing shadow', async function () {
-        const ret = await handler({
+        const ret = await handler(<Directive.Message>{
             directive: {
                 header: {
                     namespace: 'Alexa.Discovery',
@@ -74,7 +75,7 @@ describe('Discovery', function () {
     it('should return empty endpoints on error', async function () {
         const key = await getSharedKey();
         const token = await generateToken(key, 'invalidClientId', authenticationProps.testClientIds[0], new Date(Date.now() + 5000), authenticationProps.testPoolId, authenticationProps.testRegionId);
-        const ret = await handler({
+        const ret = await handler(<Directive.Message>{
             directive: {
                 header: {
                     namespace: 'Alexa.Discovery',

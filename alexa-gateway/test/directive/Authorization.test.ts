@@ -1,4 +1,4 @@
-import { Event, Message } from '@vestibule-link/alexa-video-skill-types';
+import { Event, Message, Directive } from '@vestibule-link/alexa-video-skill-types';
 import { expect, use } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import 'mocha';
@@ -26,7 +26,7 @@ describe('Authorization', function (){
         lwaStub.withArgs('failed',vestibuleClientId).returns(Promise.reject(new Error('Failed')));
     })
     async function callHandler(authorizationCode: string): Promise<Event.Message> {
-        return <Event.Message>await handler({
+        return <Event.Message>await handler(<Directive.Message>{
             directive: {
                 header: {
                     namespace: "Alexa.Authorization",
