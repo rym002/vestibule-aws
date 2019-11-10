@@ -12,19 +12,20 @@ interface AlexaParameters {
     gatewayUri: string
 }
 
-export async function sendAlexaEvent(request: Event.Message, clientId: string, endpointId:string) {
+export async function createEndpointRequest(clientId: string, endpointId: string): Promise<Message.EndpointRequest> {
+    const token = await tokenManager.getToken(clientId)
+    const bearerToken: Message.BearerToken = {
+        type: 'BearerToken',
+        token: token
+    }
+    const endpoint: Message.EndpointRequest = {
+        endpointId: endpointId,
+        scope: bearerToken
+    }
+    return endpoint
+}
+export async function sendAlexaEvent(request: Event.Message, clientId: string, token: string) {
     try {
-        const token = await tokenManager.getToken(clientId)
-        const bearerToken: Message.BearerToken = {
-            type: 'BearerToken',
-            token: token
-        }
-        const endpoint: Message.EndpointRequest = {
-            endpointId: endpointId,
-            scope: bearerToken
-        }
-        request.event['endpoint'] = endpoint
-        
         const alexaParameters = await getParameters<AlexaParameters>('alexa');
         console.time('sendAlexaEvent' + clientId)
         await alexaAxios.post(alexaParameters.gatewayUri, request, {

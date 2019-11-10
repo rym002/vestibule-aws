@@ -1,2 +1,2 @@
 export { default as tokenManager } from './Lwa'
-export { sendAlexaEvent } from './AlexaGateway'
+export { sendAlexaEvent, createEndpointRequest } from './AlexaGateway'

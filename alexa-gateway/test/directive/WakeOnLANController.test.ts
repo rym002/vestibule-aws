@@ -5,13 +5,20 @@ import * as eventHandler from '../../src/event';
 import wolHandler from '../../src/directive/WOL';
 import { localEndpoint, messageId, vestibuleClientId } from '../mock/IotDataMock';
 
-describe('WakeOnLANController', function (){
+describe('WakeOnLANController', function () {
     const sandbox = createSandbox();
-    before(function (){
+    before(function () {
         sandbox.stub(eventHandler, 'sendAlexaEvent').usingPromise(Promise.resolve());
+        sandbox.stub(eventHandler, 'createEndpointRequest').returns(Promise.resolve({
+            endpointId: 'testEndpointId',
+            scope: {
+                type: 'BearerToken',
+                token: ''
+            }
+        }));
     })
 
-    after(function (){
+    after(function () {
         sandbox.restore()
     })
     it('should call authorization', async function () {

@@ -2,7 +2,7 @@ import { Discovery, Event, WakeOnLANController } from '@vestibule-link/alexa-vid
 import { SubType } from '@vestibule-link/iot-types';
 import { CapabilityHandler, EndpointRecord, listToTypedStringArray } from './Discovery';
 import { convertToContext, TrackedEndpointShadow } from './Endpoint';
-import { sendAlexaEvent } from '../event';
+import { sendAlexaEvent, createEndpointRequest } from '../event';
 
 type DirectiveNamespace = WakeOnLANController.NamespaceType;
 const namespace: DirectiveNamespace = WakeOnLANController.namespace;
@@ -21,6 +21,10 @@ class Handler implements CapabilityHandler<DirectiveNamespace>{
         trackedEndpoint: TrackedEndpointShadow,
         correlationToken: string) {
         const context = convertToContext(trackedEndpoint);
+        const endpoint = await createEndpointRequest(userSub, endpointId)
+        const token = endpoint.scope.type == 'BearerToken'
+            ? endpoint.scope.token
+            : ''
         const message: Event.Message = {
             context: context,
             event: {
@@ -32,16 +36,10 @@ class Handler implements CapabilityHandler<DirectiveNamespace>{
                     payloadVersion: '3'
                 },
                 payload: {},
-                endpoint:{
-                    endpointId:'',
-                    scope:{
-                        type:'BearerToken',
-                        token:''
-                    }
-                }
+                endpoint: endpoint
             }
         }
-        await sendAlexaEvent(message, userSub, endpointId);
+        await sendAlexaEvent(message, userSub, token);
     }
 }
 

@@ -4,17 +4,14 @@ import * as AWSMock from 'aws-sdk-mock';
 import { assert, expect, use } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import 'mocha';
-import { createSandbox } from 'sinon';
-import * as eventHandler from '../../src/event';
 import { sendAlexaEvent } from '../../src/event';
 import { mockAwsWithSpy } from '../mock/AwsMock';
-import { directiveMocks } from '../mock/DirectiveMocks';
+import { directiveMocks, resetDirectiveMocks } from '../mock/DirectiveMocks';
 import { messageId, vestibuleClientId } from '../mock/IotDataMock';
 import nock = require('nock');
 use(chaiAsPromised);
 
 describe('AlexaEvent', function () {
-    const sandbox = createSandbox();
     const alexaParameters = {
         gatewayUri: 'http://gateway/event/test'
     }
@@ -29,13 +26,11 @@ describe('AlexaEvent', function () {
     }
 
     before(async function () {
-        const lwaStub = sandbox.stub(eventHandler.tokenManager, 'getToken')
-        lwaStub.returns(Promise.resolve('testToken'))
         await directiveMocks(getAlexaTestParameters);
     })
 
     after(function () {
-        sandbox.restore()
+        resetDirectiveMocks()
     })
     function mockAlexaGateway(request: Event.Message, token: string, responseCode: number, body: nock.ReplyBody) {
         return nock('http://gateway/event')
@@ -83,7 +78,7 @@ describe('AlexaEvent', function () {
 
         mockAlexaGateway(testEvent, 'testToken', 401, errorResponse)
 
-        await expect(sendAlexaEvent(testEvent, vestibuleClientId, 'testEndpointId')).to.rejected
+        await expect(sendAlexaEvent(testEvent, vestibuleClientId, 'testToken')).to.rejected
             .and.to.be.eventually.have.property('message', errorResponse.payload.message)
 
         assert(dynamoBatchWriteSpy.called);
@@ -103,11 +98,11 @@ describe('AlexaEvent', function () {
 
         mockAlexaGateway(testEvent, 'testToken', 401, errorResponse)
 
-        await expect(sendAlexaEvent(testEvent, vestibuleClientId, 'testEndpointId')).to.rejected
+        await expect(sendAlexaEvent(testEvent, vestibuleClientId, 'testToken')).to.rejected
             .and.to.be.eventually.have.property('message', errorResponse.payload.message)
     })
     it('should send to alexa', async function () {
         const alexaGatewaySpy = mockAlexaGateway(testEvent, 'testToken', 200, {});
-        await sendAlexaEvent(testEvent, vestibuleClientId, 'testEndpointId');
+        await sendAlexaEvent(testEvent, vestibuleClientId, 'testToken');
     })
 })
