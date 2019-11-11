@@ -19,7 +19,7 @@ async function directiveHandler(event: ClientStateUpdate, context: Context, call
     const promises = keys(event.endpoints).map(async endpointId => {
         const endpointState = event.endpoints[endpointId]
         try {
-            await sendEndpointEvent(endpointState, userSub, endpointId)
+            await sendEndpointEvent(endpointState, endpointId, userSub)
         } catch (err) {
             console.error(err)
         }
@@ -35,6 +35,9 @@ async function sendEndpointEvent(endpointState: EndpointState, endpointId: strin
         metadata: metadata
     })
     const endpointRequest = await createEndpointRequest(userSub, endpointId)
+    const token = endpointRequest.scope.type == 'BearerToken'
+        ? endpointRequest.scope.token
+        : ''
     const changeMessage: Alexa.ChangePayload = {
         change: {
             cause: {
@@ -56,6 +59,6 @@ async function sendEndpointEvent(endpointState: EndpointState, endpointId: strin
             endpoint: endpointRequest
         }
     }
-    await sendAlexaEvent(message, userSub, endpointId)
+    await sendAlexaEvent(message, userSub, token)
 }
 export const handler: Handler<ClientStateUpdate, void> = directiveHandler;
