@@ -36,6 +36,20 @@ Resources:
           refresh_token_table: !Select [1, !Split [ "/", !GetAtt RefreshTokensTable.Arn]]
           auth_token_table: !Select [1, !Split [ "/", !GetAtt AuthTokensTable.Arn]]
           endpoint_table: !Select [1, !Split [ "/", !GetAtt EndpointTable.Arn]]
+  AlexaEvent:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: alexa-gateway/
+      Handler: dist/event/handler.handler
+      Runtime: nodejs10.x
+      FunctionName: !Sub ${AWS::StackName}-AlexaEvent
+      Description: 'Vestibule Alexa Event Gateway'
+      Timeout: 50
+      Role: !GetAtt AlexaGatewayRole.Arn
+      Environment:
+        Variables:
+          refresh_token_table: !Select [1, !Split [ "/", !GetAtt RefreshTokensTable.Arn]]
+          auth_token_table: !Select [1, !Split [ "/", !GetAtt AuthTokensTable.Arn]]
   AlexaGatewayInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:

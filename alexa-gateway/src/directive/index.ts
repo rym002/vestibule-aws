@@ -86,4 +86,4 @@ export const contextReporters: ContextPropertyReporters = {
     'Alexa.VideoRecorder': VideoRecorder
 }
 
-export { stateToMetadata } from './Endpoint'
+export { stateToMetadata, convertToContext } from './Endpoint'
