@@ -19,7 +19,7 @@ async function directiveHandler(event: ClientStateUpdate, context: Context, call
     const promises = keys(event.endpoints).map(async endpointId => {
         const endpointState = event.endpoints[endpointId]
         try {
-            await sendEndpointEvent(endpointState, endpointId, userSub)
+            await sendEndpointEvent(endpointState, endpointId, userSub, context.awsRequestId + endpointId)
         } catch (err) {
             console.error(err)
         }
@@ -28,7 +28,7 @@ async function directiveHandler(event: ClientStateUpdate, context: Context, call
     console.timeEnd('event-handler ' + context.awsRequestId);
 }
 
-async function sendEndpointEvent(endpointState: EndpointState, endpointId: string, userSub: string) {
+async function sendEndpointEvent(endpointState: EndpointState, endpointId: string, userSub: string, requestId:string) {
     const metadata: EndpointMetadata = stateToMetadata(endpointState)
     const updatedContext = convertToContext({
         endpoint: endpointState,
@@ -51,7 +51,7 @@ async function sendEndpointEvent(endpointState: EndpointState, endpointId: strin
             header: {
                 namespace: Alexa.namespace,
                 name: 'ChangeReport',
-                messageId: 'messageId',
+                messageId: requestId,
                 payloadVersion: '3'
             },
             payload: changeMessage,
