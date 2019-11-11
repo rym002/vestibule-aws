@@ -13,19 +13,19 @@ interface ClientStateUpdate {
 }
 
 async function directiveHandler(event: ClientStateUpdate, context: Context, callback: Callback<void>): Promise<void> {
-    console.time('event-handler' + context.awsRequestId);
+    console.time('event-handler ' + context.awsRequestId);
     logger('Request: %j', event);
     const userSub = event.userSub
     const promises = keys(event.endpoints).map(async endpointId => {
         const endpointState = event.endpoints[endpointId]
         try {
-            sendEndpointEvent(endpointState, userSub, endpointId)
+            await sendEndpointEvent(endpointState, userSub, endpointId)
         } catch (err) {
             console.error(err)
         }
     })
     await Promise.all(promises)
-    console.timeEnd('event-handler' + context.awsRequestId);
+    console.timeEnd('event-handler ' + context.awsRequestId);
 }
 
 async function sendEndpointEvent(endpointState: EndpointState, endpointId: string, userSub: string) {

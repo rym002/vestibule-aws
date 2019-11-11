@@ -7,7 +7,7 @@ import { DirectiveMessage, findDirectiveHandler } from '.';
 const logger = console.debug;
 
 async function directiveHandler(directive: Directive.Message, context: Context, callback: Callback<Event.Message>): Promise<Event.Message> {
-    console.time('handler');
+    console.time('directive-handler ' + context.awsRequestId);
     logger('Request: %j', directive);
     const header = directive.directive.header;
     const namespace = header.namespace;
@@ -24,7 +24,7 @@ async function directiveHandler(directive: Directive.Message, context: Context, 
         response = messageHandler.getError(err, directiveMessage, messageId);
     }
     const event = toEventMessage(response, directiveMessage, messageId);
-    console.timeEnd('handler');
+    console.timeEnd('directive-handler ' + context.awsRequestId);
     logger('Response: %j', event);
     return event;
 }
