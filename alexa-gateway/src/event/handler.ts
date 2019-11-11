@@ -52,7 +52,6 @@ async function sendEndpointEvent(endpointState: EndpointState, endpointId: strin
                 namespace: Alexa.namespace,
                 name: 'ChangeReport',
                 messageId: 'messageId',
-                correlationToken: 'correlationToken',
                 payloadVersion: '3'
             },
             payload: changeMessage,
