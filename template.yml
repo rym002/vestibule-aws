@@ -346,7 +346,7 @@ Resources:
         RuleDisabled: false
         Actions:
           -
-            LambdaAction:
+            Lambda:
               FunctionArn: !GetAtt AlexaChangeReportEvent.Arn
         AwsIotSqlVersion: 2016-03-23
         Sql: >-
