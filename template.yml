@@ -396,4 +396,11 @@ Resources:
         - /aws/lambda/${FunctionName}
         - { FunctionName: !Select [6, !Split [ ":", !GetAtt AlexaGateway.Arn]] }
       RetentionInDays: 7
- 
+  AlexaChangeReportEventLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: 
+        !Sub
+        - /aws/lambda/${FunctionName}
+        - { FunctionName: !Select [6, !Split [ ":", !GetAtt AlexaChangeReportEvent.Arn]] }
+      RetentionInDays: 7
