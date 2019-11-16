@@ -124,8 +124,8 @@ Resources:
       RoleName: AlexaGatewayRole
       Path: !Sub ${AWS::StackName}
       ManagedPolicyArns:
-        - !GetAtt LambdaDirectivePolicy.Arn
-        - !GetAtt LambdaDefaultPolicy.Arn
+        - !Ref LambdaDirectivePolicy
+        - !Ref LambdaDefaultPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -143,7 +143,7 @@ Resources:
       RoleName: AlexaChangeEventRole
       Path: !Sub ${AWS::StackName}
       ManagedPolicyArns:
-        - !GetAtt LambdaDefaultPolicy.Arn
+        - !Ref LambdaDefaultPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       AssumeRolePolicyDocument:
         Version: 2012-10-17
