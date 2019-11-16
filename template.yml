@@ -341,6 +341,7 @@ Resources:
         !Sub
         - ${StackName}_EventChangeReport
         - { StackName: !Join ["_", !Split [ "-", !Ref "AWS::StackName"]] }
+      TopicRulePayload:
         Description: Call AlexaChangeReportEvent function to send ChangeReport
         RuleDisabled: false
         Actions:
