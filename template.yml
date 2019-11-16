@@ -64,6 +64,7 @@ Resources:
       FunctionName: !GetAtt AlexaChangeReportEvent.Arn
       Action: lambda:InvokeFunction
       SourceArn: !GetAtt IOTEventChangeReportRule.Arn
+      Principal: iot.amazonaws.com
   AuthTokensTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
