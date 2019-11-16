@@ -360,7 +360,8 @@ Resources:
   VestibuleIotRuleRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${AWS::StackName}-IotRuleRole
+      RoleName: IotRuleRole
+      Path: !Sub /${AWS::StackName}/
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
