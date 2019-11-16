@@ -36,13 +36,13 @@ Resources:
           refresh_token_table: !Select [1, !Split [ "/", !GetAtt RefreshTokensTable.Arn]]
           auth_token_table: !Select [1, !Split [ "/", !GetAtt AuthTokensTable.Arn]]
           endpoint_table: !Select [1, !Split [ "/", !GetAtt EndpointTable.Arn]]
-  AlexaEvent:
+  AlexaChangeReportEvent:
     Type: 'AWS::Serverless::Function'
     Properties:
       CodeUri: alexa-gateway/
       Handler: dist/event/handler.handler
       Runtime: nodejs10.x
-      FunctionName: !Sub ${AWS::StackName}-AlexaEvent
+      FunctionName: !Sub ${AWS::StackName}-AlexaChangeReportEvent
       Description: 'Vestibule Alexa Event Gateway'
       Timeout: 50
       Role: !GetAtt AlexaGatewayRole.Arn
@@ -50,6 +50,7 @@ Resources:
         Variables:
           refresh_token_table: !Select [1, !Split [ "/", !GetAtt RefreshTokensTable.Arn]]
           auth_token_table: !Select [1, !Split [ "/", !GetAtt AuthTokensTable.Arn]]
+          endpoint_table: !Select [1, !Split [ "/", !GetAtt EndpointTable.Arn]]
   AlexaGatewayInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -57,6 +58,12 @@ Resources:
       Action: lambda:InvokeFunction
       EventSourceToken: !Ref VideoSkillId
       Principal: alexa-connectedhome.amazon.com
+  AlexaChangeReportEventInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt AlexaChangeReportEvent.Arn
+      Action: lambda:InvokeFunction
+      SourceArn: !GetAtt IOTEventChangeReportRule.Arn
   AuthTokensTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
@@ -114,7 +121,12 @@ Resources:
   AlexaGatewayRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${AWS::StackName}-AlexaGatewayRole
+      RoleName: AlexaGatewayRole
+      Path: !Sub ${AWS::StackName}
+      ManagedPolicyArns:
+        - !GetAtt LambdaDirectivePolicy.Arn
+        - !GetAtt LambdaDefaultPolicy.Arn
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -125,19 +137,34 @@ Resources:
                 - lambda.amazonaws.com
             Action:
               - sts:AssumeRole
-  AlexaGatewayPolicy:
-    Type: AWS::IAM::Policy
+  AlexaChangeEventRole:
+    Type: AWS::IAM::Role
     Properties:
-      Roles:
-        - !Ref AlexaGatewayRole
-      PolicyName: !Sub ${AWS::StackName}-AlexaGatewayPolicy
+      RoleName: AlexaChangeEventRole
+      Path: !Sub ${AWS::StackName}
+      ManagedPolicyArns:
+        - !GetAtt LambdaDefaultPolicy.Arn
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+  LambdaDirectivePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Path: !Sub ${AWS::StackName}
       PolicyDocument:
         Version: 2012-10-17
         Statement:
           -
             Effect: Allow
             Action:
-              - dynamodb:BatchWriteItem
               - dynamodb:PutItem
               - dynamodb:BatchGetItem
               - dynamodb:GetItem
@@ -188,22 +215,21 @@ Resources:
               - iot:UpdateThingShadow
             Resource:
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:thing/vestibule-bridge-*
+  LambdaDefaultPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Path: !Sub ${AWS::StackName}
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
           -
             Effect: Allow
             Action:
-              - logs:CreateLogStream
+              - dynamodb:BatchWriteItem
             Resource:
-              - !Sub 
-                - arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*
-                - { FunctionName: !Select [6, !Split [ ":", !GetAtt AlexaGateway.Arn]] }
-          -
-            Effect: Allow
-            Action:
-              - logs:PutLogEvents
-            Resource:
-              - !Sub
-                - arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*:log-stream:*
-                - { FunctionName: !Select [6, !Split [ ":", !GetAtt AlexaGateway.Arn]] }
+              - !GetAtt EndpointTable.Arn
+              - !GetAtt AuthTokensTable.Arn
+              - !GetAtt RefreshTokensTable.Arn
           -
             Effect: Allow
             Action: 
@@ -307,6 +333,28 @@ Resources:
         Sql: >-
           SELECT substring(topic(2),length('vestibule-bridge-')) as user_id, concat(topic(5),'@',topic(6)) as endpointId, * 
           FROM 'vestibule-bridge/+/alexa/endpoint/+/+'
+          WHERE startswith(clientId,"vestibule-bridge-")
+  IOTEventChangeReportRule:
+    Type: AWS::IoT::TopicRule
+    Properties:
+      RuleName:
+        !Sub
+        - ${StackName}_EventChangeReport
+        - { StackName: !Join ["_", !Split [ "-", !Ref "AWS::StackName"]] }
+        Description: Call AlexaChangeReportEvent function to send ChangeReport
+        RuleDisabled: false
+        Actions:
+          -
+            LambdaAction:
+              FunctionArn: !GetAtt AlexaChangeReportEvent.Arn
+        AwsIotSqlVersion: 2016-03-23
+        Sql: >-
+          SELECT {
+            'userSub':substring(topic(3),length('vestibule-bridge-')),
+            'shadow':*
+          }
+          FROM '$aws/things/+/shadow/update/accepted'
+          WHERE startswith(clientId,"vestibule-bridge-")
   VestibuleIotRuleRole:
     Type: AWS::IAM::Role
     Properties:
