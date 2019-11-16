@@ -122,7 +122,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       RoleName: AlexaGatewayRole
-      Path: /vestibule
+      Path: !Sub /${AWS::StackName}/
       ManagedPolicyArns:
         - !Ref LambdaDirectivePolicy
         - !Ref LambdaDefaultPolicy
@@ -141,7 +141,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       RoleName: AlexaChangeEventRole
-      Path: /vestibule
+      Path: !Sub /${AWS::StackName}/
       ManagedPolicyArns:
         - !Ref LambdaDefaultPolicy
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -158,7 +158,7 @@ Resources:
   LambdaDirectivePolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
-      Path: /vestibule
+      Path: !Sub /${AWS::StackName}/
       PolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -218,7 +218,7 @@ Resources:
   LambdaDefaultPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
-      Path: /vestibule
+      Path: !Sub /${AWS::StackName}/
       PolicyDocument:
         Version: 2012-10-17
         Statement:
