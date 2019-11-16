@@ -26,10 +26,30 @@ describe('IOT Event', function () {
     it('should send events', function () {
         handler({
             userSub: 'testSub',
-            endpoints: {
-                'testendpoint': {
-                    'Alexa.PowerController': {
-                        'powerState': 'OFF'
+            shadow: {
+                state: {
+                    reported: {
+                        connected: true,
+                        endpoints: {
+                            'testendpoint': {
+                                'Alexa.PowerController': {
+                                    'powerState': 'OFF'
+                                }
+                            }
+                        }
+                    }
+                },
+                metadata: {
+                    reported: {
+                        endpoints: {
+                            'testendpoint': {
+                                'Alexa.PowerController': {
+                                    'powerState': {
+                                        timestamp: 100000
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
