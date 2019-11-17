@@ -166,15 +166,6 @@ Resources:
           -
             Effect: Allow
             Action:
-              - dynamodb:PutItem
-              - dynamodb:BatchGetItem
-              - dynamodb:GetItem
-            Resource:
-              - !GetAtt AuthTokensTable.Arn
-              - !GetAtt RefreshTokensTable.Arn
-          -
-            Effect: Allow
-            Action:
               - dynamodb:Query
             Resource:
               - !GetAtt EndpointTable.Arn
@@ -223,6 +214,15 @@ Resources:
       PolicyDocument:
         Version: 2012-10-17
         Statement:
+          -
+            Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:BatchGetItem
+              - dynamodb:GetItem
+            Resource:
+              - !GetAtt AuthTokensTable.Arn
+              - !GetAtt RefreshTokensTable.Arn
           -
             Effect: Allow
             Action:
