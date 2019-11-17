@@ -18,7 +18,7 @@ async function changeReportHandler(event: ClientStateUpdate, context: Context, c
     logger('Request: %j', event);
     const userSub = event.userSub
     const reported = event.shadow.state && event.shadow.state.reported
-    if (reported && reported.connected) {
+    if (reported && reported.endpoints) {
         const endpoints = reported.endpoints
         const promises = keys(endpoints).map(async endpointId => {
             const endpoint = toLocalEndpoint(endpointId);
