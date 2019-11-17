@@ -45,7 +45,7 @@ Resources:
       FunctionName: !Sub ${AWS::StackName}-AlexaChangeReportEvent
       Description: 'Vestibule Alexa Event Gateway'
       Timeout: 50
-      Role: !GetAtt AlexaGatewayRole.Arn
+      Role: !GetAtt AlexaChangeEventRole.Arn
       Environment:
         Variables:
           refresh_token_table: !Select [1, !Split [ "/", !GetAtt RefreshTokensTable.Arn]]
@@ -334,7 +334,6 @@ Resources:
         Sql: >-
           SELECT substring(topic(2),length('vestibule-bridge-')) as user_id, concat(topic(5),'@',topic(6)) as endpointId, * 
           FROM 'vestibule-bridge/+/alexa/endpoint/+/+'
-          WHERE startswith(clientId,"vestibule-bridge-")
   IOTEventChangeReportRule:
     Type: AWS::IoT::TopicRule
     Properties:
@@ -356,7 +355,6 @@ Resources:
             'shadow':*
           }
           FROM '$aws/things/+/shadow/update/accepted'
-          WHERE startswith(clientId,"vestibule-bridge-")
   VestibuleIotRuleRole:
     Type: AWS::IAM::Role
     Properties:
