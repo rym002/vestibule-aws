@@ -25,6 +25,7 @@ class Handler extends DefaultNotStoppedHandler<DirectiveNamespace> implements Co
         return {
             interface: namespace,
             retrievable: true,
+            proactivelyReported: true,
             properties: {
                 supported: capabilities.L.map(capability => {
                     return {

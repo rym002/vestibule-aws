@@ -32,6 +32,7 @@ class Handler extends DefaultIotEndpointHandler<DirectiveNamespace> implements C
         return {
             interface: namespace,
             retrievable: true,
+            proactivelyReported: true,
             properties: {
                 supported: capabilities.L.map(capability => {
                     return {

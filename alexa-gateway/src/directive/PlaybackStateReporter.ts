@@ -23,6 +23,7 @@ class Handler implements CapabilityHandler<DirectiveNamespace>, ContextPropertyR
         return {
             interface: namespace,
             retrievable: true,
+            proactivelyReported: true,
             properties: {
                 supported: capabilities.L.map(capability => {
                     return {
