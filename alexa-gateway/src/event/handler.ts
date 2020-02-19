@@ -66,6 +66,7 @@ async function sendEndpointEvent(trackedEndpoint: TrackedEndpointShadow, endpoin
             endpoint: endpointRequest
         }
     }
+    logger('ChangeReport Request: %j', message);
     await sendAlexaEvent(message, userSub, token)
 }
 export const handler: Handler<ClientStateUpdate, void> = changeReportHandler;
