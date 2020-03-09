@@ -31,17 +31,17 @@ export const sharedStates: SharedStates = {
     playback: {
         playing: {
             'Alexa.PlaybackStateReporter': {
-                playbackState: "PLAYING"
+                playbackState: {state:"PLAYING"}
             }
         },
         paused: {
             'Alexa.PlaybackStateReporter': {
-                playbackState: "PAUSED"
+                playbackState: {state:"PAUSED"}
             }
         },
         stopped: {
             'Alexa.PlaybackStateReporter': {
-                playbackState: "STOPPED"
+                playbackState: {state:"STOPPED"}
             }
         }
     },

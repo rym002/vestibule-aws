@@ -41,7 +41,7 @@ describe('PlaybackController', function () {
             context: [{
                 namespace: 'Alexa.PlaybackStateReporter',
                 name: 'playbackState',
-                value: state
+                value: { state: state }
             }]
         }
     }
@@ -60,7 +60,7 @@ describe('PlaybackController', function () {
                         payload: {},
                         stateChange: {
                             'Alexa.PlaybackStateReporter': {
-                                playbackState: 'PLAYING'
+                                playbackState: { state: 'PLAYING' }
                             }
                         },
                         error: false
@@ -71,7 +71,7 @@ describe('PlaybackController', function () {
                         payload: {},
                         stateChange: {
                             'Alexa.PlaybackStateReporter': {
-                                playbackState: 'PAUSED'
+                                playbackState: { state: 'PAUSED' }
                             }
                         },
                         error: false
@@ -82,7 +82,7 @@ describe('PlaybackController', function () {
                         payload: {},
                         stateChange: {
                             'Alexa.PlaybackStateReporter': {
-                                playbackState: 'STOPPED'
+                                playbackState: { state: 'STOPPED' }
                             }
                         },
                         error: false

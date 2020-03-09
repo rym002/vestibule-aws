@@ -28,7 +28,9 @@ describe('IOT', function () {
         context('Message', function () {
             const desiredState: EndpointState = {
                 "Alexa.PlaybackStateReporter": {
-                    'playbackState': 'PLAYING'
+                    'playbackState': {
+                        state:'PLAYING'
+                    }
                 }
             }
             afterEach(function () {
@@ -123,7 +125,9 @@ describe('IOT', function () {
                         endpoints: {
                             '123': {
                                 'Alexa.PlaybackStateReporter':{
-                                    playbackState:'PLAYING'
+                                    playbackState:{
+                                        state:'PLAYING'
+                                    }
                                 }
                             }
                         }
@@ -259,6 +263,7 @@ describe('IOT', function () {
                     .to.have.property(generateEndpointId(localEndpoint))
                     .to.have.property('Alexa.PlaybackStateReporter')
                     .to.have.property('playbackState')
+                    .to.have.property('state')
                     .to.have.property('timestamp', Math.floor(Date.now() / 1000))
             })
             it('should throw error from error response', async function () {

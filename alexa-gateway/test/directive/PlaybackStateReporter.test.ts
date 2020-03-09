@@ -9,8 +9,10 @@ describe('PlaybackStateReporter', function () {
     })
 
     it('should convert shadow to property', async function () {
-        const property = handler.convertToProperty('playbackState', 'PLAYING', {
-            'timestamp': 100
+        const property = handler.convertToProperty('playbackState', { state: 'PLAYING' }, {
+            state: {
+                'timestamp': 100
+            }
         });
         expect(property)
     })

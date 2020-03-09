@@ -5,7 +5,7 @@ export class FakeContext implements Context{
     functionName: string = 'test';
     functionVersion: string = '1';
     invokedFunctionArn: string = ' abc';
-    memoryLimitInMB: number = 100;
+    memoryLimitInMB: string = '100';
     logGroupName: string = 'logGroup';
     logStreamName: string = 'logStream';
     constructor(readonly awsRequestId:string){

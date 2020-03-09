@@ -165,7 +165,7 @@ export abstract class DefaultNotStoppedHandler<NS extends DirectiveCapabilities>
     verifyShadowEndpoint(message: SubType<DirectiveMessage, NS>, states: EndpointState) {
         super.verifyShadowEndpoint(message, states);
         const playbackStates = states[PlaybackStateReporter.namespace];
-        const playbackState = playbackStates ? playbackStates.playbackState : undefined;
+        const playbackState = playbackStates ? playbackStates.playbackState?.state : undefined;
         if (playbackState == 'STOPPED') {
             const error: ErrorHolder = {
                 errorType: Alexa.namespace,
