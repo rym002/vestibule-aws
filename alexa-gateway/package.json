@@ -17,32 +17,32 @@
   },
   "devDependencies": {
     "@types/aws-iot-device-sdk": "^2.2.1",
-    "@types/aws-lambda": "^8.10.46",
-    "@types/chai": "^4.2.10",
+    "@types/aws-lambda": "^8.10.48",
+    "@types/chai": "^4.2.11",
     "@types/chai-as-promised": "^7.1.2",
     "@types/lodash": "^4.14.149",
-    "@types/mocha": "^5.2.7",
+    "@types/mocha": "^7.0.2",
     "@types/nock": "^10.0.3",
     "@types/node-jose": "^1.1.2",
     "@types/sinon": "^7.5.2",
-    "aws-sdk": "^2.635.0",
+    "aws-sdk": "^2.656.0",
     "aws-sdk-mock": "^4.5.0",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
-    "mocha": "^6.2.2",
+    "mocha": "^7.1.1",
     "nock": "^10.0.6",
     "rimraf": "^2.7.1",
     "sinon": "^7.5.0",
-    "ts-node": "^8.6.2",
+    "ts-node": "^8.8.2",
     "typescript": "^3.8.3"
   },
   "dependencies": {
     "@vestibule-link/alexa-video-skill-types": "^1.1.13",
     "@vestibule-link/iot-types": "^2.0.3",
-    "aws-iot-device-sdk": "^2.2.3",
+    "aws-iot-device-sdk": "^2.2.4",
     "axios": "^0.18.1",
     "https": "^1.0.0",
     "lodash": "^4.17.15",
-    "node-jose": "^1.1.3"
+    "node-jose": "^1.1.4"
   }
 }
