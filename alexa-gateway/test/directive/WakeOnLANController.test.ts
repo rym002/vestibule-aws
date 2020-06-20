@@ -1,7 +1,7 @@
 import { generateEndpointId } from '@vestibule-link/iot-types';
 import 'mocha';
 import { createSandbox, SinonSpy } from 'sinon';
-import * as eventHandler from '../../src/event';
+import * as eventHandler from '../../src/event/AlexaGateway';
 import wolHandler from '../../src/directive/WOL';
 import { localEndpoint, messageId, vestibuleClientId } from '../mock/IotDataMock';
 
