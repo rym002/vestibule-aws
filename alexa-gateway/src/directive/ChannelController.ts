@@ -62,9 +62,9 @@ class Handler extends DefaultEndpointOnHandler<DirectiveNamespace> implements Co
     getCapability(capabilities: NonNullable<SubType<EndpointRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
         return {
             interface: namespace,
-            retrievable: true,
-            proactivelyReported: true,
             properties: {
+                retrievable: true,
+                proactivelyReported: true,
                 supported: capabilities.L.map(capability => {
                     return {
                         name: capability.S
