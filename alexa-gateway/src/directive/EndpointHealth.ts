@@ -16,7 +16,7 @@ class Handler implements CapabilityHandler<DirectiveNamespace>, ContextPropertyR
             namespace: namespace,
             name: key,
             value: states,
-            timeOfSample: shadowToDate(metadata)
+            timeOfSample: shadowToDate(metadata.value)
         }
     }
     getCapability(capabilities: NonNullable<SubType<EndpointRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
