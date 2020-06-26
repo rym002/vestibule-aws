@@ -9,8 +9,10 @@ describe('EndpointHealth', function () {
     })
 
     it('should convert shadow to property', async function () {
-        const property = handler.convertToProperty('connectivity', 'OK', {
-            'timestamp': 100
+        const property = handler.convertToProperty('connectivity', { value: 'OK' }, {
+            value: {
+                'timestamp': 100
+            }
         });
         expect(property)
     })
