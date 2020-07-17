@@ -42,7 +42,7 @@
     "aws-iot-device-sdk": "^2.2.6",
     "axios": "^0.18.1",
     "https": "^1.0.0",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "node-jose": "^1.1.4"
   }
 }
