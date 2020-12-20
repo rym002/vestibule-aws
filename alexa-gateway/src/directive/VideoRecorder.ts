@@ -1,9 +1,9 @@
 import { Alexa, Discovery, Video, VideoRecorder } from "@vestibule-link/alexa-video-skill-types";
-import { DirectiveErrorResponse, EndpointState, EndpointStateMetadata, ErrorHolder, getShadowEndpoint, getShadowEndpointMetadata, LocalEndpoint, SubType } from "@vestibule-link/iot-types";
-import { DirectiveMessage, DirectiveResponseByNamespace } from ".";
+import { DirectiveErrorResponse, EndpointState, ErrorHolder, Shadow, SubType } from "@vestibule-link/iot-types";
+import { ContextPropertyReporter, DirectiveMessage, DirectiveResponseByNamespace, EndpointStateMetadata, EndpointStateMetadataValue, EndpointStateValue, NamedContextValue, ValidEndpointState, convertToContext } from "./DirectiveTypes";
 import { TopicResponse } from "../iot";
-import { EndpointRecord } from "./Discovery";
-import { ContextPropertyReporter, convertToContext, DefaultEndpointOnHandler, EndpointStateMetadataValue, EndpointStateValue, MessageHandlingFlags, NamedContextValue, shadowToDate, TrackedEndpointShadow } from "./Endpoint";
+import { EndpointRecord } from "./DiscoveryTypes";
+import { DefaultEndpointOnHandler, MessageHandlingFlags, shadowToDate } from "./Endpoint";
 
 type DirectiveNamespace = VideoRecorder.NamespaceType;
 const namespace: DirectiveNamespace = VideoRecorder.namespace;
@@ -34,17 +34,13 @@ class Handler extends DefaultEndpointOnHandler<DirectiveNamespace> implements Co
         }
     }
     createResponse(message: SubType<DirectiveMessage, DirectiveNamespace>,
-        trackedEndpoint: TrackedEndpointShadow, localEndpoint: LocalEndpoint,
+        endpointShadow: ValidEndpointState,
         iotResp: TopicResponse): SubType<DirectiveResponseByNamespace, DirectiveNamespace> {
+        let shadow: Shadow<EndpointState> = endpointShadow
         if (iotResp.shadow) {
-            const endpointShadow = getShadowEndpoint(iotResp.shadow, localEndpoint);
-            const endpointMetadata = getShadowEndpointMetadata(iotResp.shadow, localEndpoint);
-            if (endpointShadow && endpointMetadata) {
-                trackedEndpoint.endpoint = endpointShadow;
-                trackedEndpoint.metadata = endpointMetadata;
-            }
+            shadow = iotResp.shadow
         }
-        const messageContext = convertToContext(trackedEndpoint);
+        const messageContext = convertToContext(shadow);
 
         const response = iotResp.response ? iotResp.response : { payload: {} }
         return {
@@ -66,7 +62,7 @@ class Handler extends DefaultEndpointOnHandler<DirectiveNamespace> implements Co
                 }
             }
         }
-        return super.getError(error,message,messageId);
+        return super.getError(error, message, messageId);
     }
 }
 

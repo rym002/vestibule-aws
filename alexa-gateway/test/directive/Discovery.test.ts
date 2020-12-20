@@ -1,4 +1,4 @@
-import { generateEndpointId } from '@vestibule-link/iot-types';
+import { Directive } from '@vestibule-link/alexa-video-skill-types';
 import { DynamoDB } from 'aws-sdk';
 import * as AWSMock from 'aws-sdk-mock';
 import { expect } from 'chai';
@@ -6,17 +6,17 @@ import 'mocha';
 import { handler } from '../../src/directive/handler';
 import { mockAwsWithSpy } from '../mock/AwsMock';
 import { authenticationProps, generateToken, generateValidScope, getSharedKey } from '../mock/CognitoMock';
-import { directiveMocks } from '../mock/DirectiveMocks';
+import { directiveMocks, resetDirectiveMocks } from '../mock/DirectiveMocks';
 import { localEndpoint, messageId, vestibuleClientId } from '../mock/IotDataMock';
 import { fakeCallback, FakeContext } from '../mock/LambdaMock';
-import { emptyParameters } from './TestHelper';
-import { Directive } from '@vestibule-link/alexa-video-skill-types';
+import { createContextSandbox, restoreSandbox } from '../mock/Sandbox';
 
 
 describe('Discovery', function () {
-    before(async function () {
-        await directiveMocks(emptyParameters);
-        mockAwsWithSpy<DynamoDB.Types.QueryInput, DynamoDB.Types.QueryOutput>('DynamoDB', 'query', (req) => {
+    beforeEach(async function () {
+        const sandbox = createContextSandbox(this)
+        await directiveMocks(sandbox);
+        mockAwsWithSpy<DynamoDB.Types.QueryInput, DynamoDB.Types.QueryOutput>(sandbox, 'DynamoDB', 'query', (req) => {
             if (req.ExpressionAttributeValues![':user_id'].S == vestibuleClientId) {
                 return {
                     Items: [
@@ -28,7 +28,7 @@ describe('Discovery', function () {
                                 SS: ["TV"]
                             },
                             endpointId: {
-                                S: generateEndpointId(localEndpoint)
+                                S: localEndpoint
                             },
                             friendlyName: {
                                 S: 'My Test Endpoint'
@@ -51,8 +51,10 @@ describe('Discovery', function () {
             }
         })
     })
-    after(() => {
+    afterEach(function () {
         AWSMock.restore('DynamoDB', 'query');
+        resetDirectiveMocks()
+        restoreSandbox(this)
     })
     it('should discover from thing shadow', async function () {
         const ret = await handler(<Directive.Message>{

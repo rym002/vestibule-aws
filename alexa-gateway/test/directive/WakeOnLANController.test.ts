@@ -1,13 +1,13 @@
-import { generateEndpointId } from '@vestibule-link/iot-types';
 import 'mocha';
-import { createSandbox, SinonSpy } from 'sinon';
-import * as eventHandler from '../../src/event/AlexaGateway';
+import { SinonSpy } from 'sinon';
 import wolHandler from '../../src/directive/WOL';
+import * as eventHandler from '../../src/event/AlexaGateway';
 import { localEndpoint, messageId, vestibuleClientId } from '../mock/IotDataMock';
+import { createContextSandbox, getContextSandbox, restoreSandbox } from '../mock/Sandbox';
 
 describe('WakeOnLANController', function () {
-    const sandbox = createSandbox();
-    before(function () {
+    beforeEach(function () {
+        const sandbox = createContextSandbox(this)
         sandbox.stub(eventHandler, 'sendAlexaEvent').usingPromise(Promise.resolve());
         sandbox.stub(eventHandler, 'createEndpointRequest').returns(Promise.resolve({
             endpointId: 'testEndpointId',
@@ -18,15 +18,19 @@ describe('WakeOnLANController', function () {
         }));
     })
 
-    after(function () {
-        sandbox.restore()
+    afterEach(function () {
+        restoreSandbox(this)
     })
     it('should call authorization', async function () {
-        await wolHandler.sendEvent(vestibuleClientId, messageId, generateEndpointId(localEndpoint), {
-            metadata: {},
-            endpoint: {
-            }
-        }, '')
-        sandbox.assert.called(<SinonSpy<any, any>>eventHandler.sendAlexaEvent);
+        await wolHandler.sendEvent(vestibuleClientId, messageId, localEndpoint,
+            {
+                metadata: {
+                    reported: {}
+                },
+                state: {
+                    reported: {}
+                }
+            }, '')
+        getContextSandbox(this).assert.called(<SinonSpy<any, any>>eventHandler.sendAlexaEvent);
     })
 })

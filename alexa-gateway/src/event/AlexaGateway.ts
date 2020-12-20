@@ -25,13 +25,13 @@ export async function createEndpointRequest(clientId: string, endpointId: string
     return endpoint
 }
 export async function sendAlexaEvent(request: Event.Message, clientId: string, token: string) {
+    const alexaParameters = await getParameters<AlexaParameters>('alexa');
     try {
-        const alexaParameters = await getParameters<AlexaParameters>('alexa');
-        console.time('sendAlexaEvent' + clientId)
+        console.time(`sendAlexaEvent ${clientId}`)
         await alexaAxios.post(alexaParameters.gatewayUri, request, {
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token
+                'Authorization': `Bearer ${token}`
             }
         });
     } catch (err) {
@@ -44,6 +44,6 @@ export async function sendAlexaEvent(request: Event.Message, clientId: string, t
         }
         throw new Error(errorResponse.payload.message)
     } finally {
-        console.timeEnd('sendAlexaEvent' + clientId)
+        console.timeEnd(`sendAlexaEvent ${clientId}`)
     }
 }

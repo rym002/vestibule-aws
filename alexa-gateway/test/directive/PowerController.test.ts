@@ -1,10 +1,11 @@
 import { EndpointCapability, ResponseMessage } from '@vestibule-link/iot-types';
 import 'mocha';
-import { createSandbox, SinonSpy } from 'sinon';
+import { SinonSpy } from 'sinon';
 import wolHandler from '../../src/directive/WOL';
 import { resetDirectiveMocks } from '../mock/DirectiveMocks';
 import { resetIotDataPublish } from '../mock/IotDataMock';
 import { MockMqttOperations } from '../mock/MqttMock';
+import { createContextSandbox, getContextSandbox, restoreSandbox } from '../mock/Sandbox';
 import { callHandler, DirectiveMessageContext, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupMqttMock, setupNotPlayingContent, setupPoweredOff, testMockErrorResponse, testSuccessfulMessage, verifyErrorResponse } from './TestHelper';
 
 describe('PowerController', function () {
@@ -40,32 +41,32 @@ describe('PowerController', function () {
     }
 
 
-    const wolSandbox = createSandbox()
-    before(function () {
-        wolSandbox.stub(wolHandler, 'sendEvent').usingPromise(Promise.resolve());
+    beforeEach(function () {
+        const sandbox = createContextSandbox(this)
+        sandbox.stub(wolHandler, 'sendEvent').usingPromise(Promise.resolve());
     })
-    after(function () {
-        wolSandbox.restore()
+    afterEach(function () {
+        restoreSandbox(this)
     })
     context('TurnOn', function () {
         const messageContext = turnOnMessageContext;
         context('powerState OFF', function () {
-            before(async function () {
-                await setupPoweredOff();
+            beforeEach(async function () {
+                await setupPoweredOff(getContextSandbox(this));
             })
-            after(() => {
+            afterEach(() => {
                 resetDirectiveMocks()
             })
             it('should call wol', async function () {
                 await testSuccessfulMessage(messageContext, eventContext)
-                wolSandbox.assert.called(<SinonSpy<any, any>>wolHandler.sendEvent)
+                getContextSandbox(this).assert.called(<SinonSpy<any, any>>wolHandler.sendEvent)
             })
         })
         context('powerState ON', function () {
-            before(async function () {
-                await setupNotPlayingContent();
+            beforeEach(async function () {
+                await setupNotPlayingContent(getContextSandbox(this));
             })
-            after(() => {
+            afterEach(() => {
                 resetDirectiveMocks()
             })
             it('should error', async function () {
@@ -84,10 +85,10 @@ describe('PowerController', function () {
     context('TurnOff', function () {
         const messageContext = turnOffMessageContext;
         context('powerState OFF', function () {
-            before(async function () {
-                await setupPoweredOff();
+            beforeEach(async function () {
+                await setupPoweredOff(getContextSandbox(this));
             })
-            after(() => {
+            afterEach(() => {
                 resetDirectiveMocks()
             })
             it('should fail', async function () {
@@ -103,8 +104,7 @@ describe('PowerController', function () {
             })
         })
         context('powerState ON', function () {
-            const sandbox = createSandbox()
-            const responseMockHandler = (topic: string | string[], mqttMock: MockMqttOperations) => {
+            const responseMockHandler = (topic: string, mqttMock: MockMqttOperations) => {
                 let resp: ResponseMessage<any> | undefined;
                 switch (topic) {
                     case generateReplyTopicName('TurnOff'):
@@ -120,22 +120,17 @@ describe('PowerController', function () {
                         }
                         break;
                 }
-                if (resp && 'string' == typeof topic) {
+                if (resp) {
                     mqttMock.sendMessage(topic, resp);
                 }
             }
-            after(function () {
-                resetDirectiveMocks()
-            })
-            before(async function () {
-                await setupNotPlayingContent();
-            })
-            beforeEach(function () {
-                setupMqttMock(responseMockHandler, sandbox, messageContext)
+            beforeEach(async function () {
+                await setupNotPlayingContent(getContextSandbox(this));
+                setupMqttMock(responseMockHandler, getContextSandbox(this), messageContext)
             })
             afterEach(function () {
                 resetIotDataPublish()
-                sandbox.restore()
+                resetDirectiveMocks()
             })
             it('should send a message', async function () {
                 await testSuccessfulMessage(messageContext, eventContext)

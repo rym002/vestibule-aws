@@ -1,11 +1,10 @@
 import { RecordController } from '@vestibule-link/alexa-video-skill-types';
-import { EndpointCapability, ResponseMessage } from '@vestibule-link/iot-types';
+import { EndpointCapability, EndpointState } from '@vestibule-link/iot-types';
 import 'mocha';
-import { createSandbox } from 'sinon';
 import { directiveMocks, mockEndpointState, resetDirectiveMocks } from '../mock/DirectiveMocks';
-import { localEndpoint, resetIotDataPublish, vestibuleClientId } from '../mock/IotDataMock';
-import { MockMqttOperations } from '../mock/MqttMock';
-import { DirectiveMessageContext, emptyParameters, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupMqttMock, setupPoweredOff, sharedStates, testDisconnectedBridge, testInvalidEndpoint, testMockErrorResponse, testPoweredOffEndpoint, testSuccessfulMessage } from './TestHelper';
+import { localEndpoint, resetIotDataUpdateThingShadow, vestibuleClientId } from '../mock/IotDataMock';
+import { createContextSandbox, getContextSandbox, restoreSandbox } from '../mock/Sandbox';
+import { DirectiveMessageContext, EventMessageContext, setupDisconnectedBridge, setupInvalidEndpoint, setupPoweredOff, sharedStates, testAsyncShadowMessage, testAsyncShadowNoUpdateMessage, testDisconnectedBridge, testInvalidEndpoint, testPoweredOffEndpoint } from './TestHelper';
 
 describe('RecordController', function () {
     const capabilities: EndpointCapability = {
@@ -45,106 +44,72 @@ describe('RecordController', function () {
             }]
         }
     }
-    context(('connected bridge'), function () {
-        const sandbox = createSandbox()
-        const responseMockHandler = (topic: string | string[], mqttMock: MockMqttOperations) => {
-            let resp: ResponseMessage<any> | undefined;
-            switch (topic) {
-                case generateReplyTopicName('StartRecording'):
-                    resp = {
-                        payload: {},
-                        stateChange: {
-                            'Alexa.RecordController': {
-                                RecordingState: 'RECORDING'
-                            }
-                        },
-                        error: false
-                    }
-                    break;
-                case generateReplyTopicName('StopRecording'):
-                    resp = {
-                        payload: {},
-                        stateChange: {
-                            'Alexa.RecordController': {
-                                RecordingState: 'NOT_RECORDING'
-                            }
-                        },
-                        error: false
-                    }
-                    break;
-                case generateReplyTopicName(mockErrorSuffix):
-                    resp = {
-                        payload: errors.bridgeError,
-                        error: true
-                    }
-                    break;
-            }
-            if (resp && 'string' == typeof topic) {
-                mqttMock.sendMessage(topic, resp);
+    function getDesiredState(state: RecordController.States): EndpointState {
+        return {
+            'Alexa.RecordController': {
+                RecordingState: state
             }
         }
+    }
+    beforeEach(async function () {
+        const sandbox = createContextSandbox(this)
+        await directiveMocks(sandbox);
+    })
+    afterEach(function () {
+        restoreSandbox(this)
+    })
+    context(('connected bridge'), function () {
         afterEach(function () {
-            sandbox.restore()
-            resetIotDataPublish();
+            resetIotDataUpdateThingShadow()
         })
 
         context('RECORDING', function () {
-            before(async function () {
-                await directiveMocks(emptyParameters);
-                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing, ...sharedStates.record.recording }, localEndpoint, true, vestibuleClientId);
+            beforeEach(async function () {
+                const sandbox = getContextSandbox(this);
+                mockEndpointState(sandbox, { ...sharedStates.power.on, ...sharedStates.playback.playing, ...sharedStates.record.recording }, localEndpoint, true, vestibuleClientId);
             })
-            after(() => {
+            afterEach(() => {
                 resetDirectiveMocks()
             })
             it('StartRecording', async function () {
                 const messageContext = getDirectiveMessageContext('StartRecording');
-                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('RECORDING');
-                await testSuccessfulMessage(messageContext, eventContext)
+                const sandbox = getContextSandbox(this);
+                await testAsyncShadowNoUpdateMessage(sandbox, messageContext, eventContext)
             })
             it('StopRecording', async function () {
                 const messageContext = getDirectiveMessageContext('StopRecording');
-                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('NOT_RECORDING');
-                await testSuccessfulMessage(messageContext, eventContext)
-            })
-            it('should map an error', async function () {
-                const messageContext = getDirectiveMessageContext('StopRecording');
-                setupMqttMock(responseMockHandler, sandbox, messageContext)
-                await testMockErrorResponse({ ...messageContext, messageSuffix: mockErrorSuffix });
+                const sandbox = getContextSandbox(this);
+                await testAsyncShadowMessage(sandbox, messageContext, eventContext, getDesiredState('NOT_RECORDING'))
             })
         })
         context('NOT_RECORDING', function () {
-            before(async function () {
-                await directiveMocks(emptyParameters);
-                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing, ...sharedStates.record.not_recording }, localEndpoint, true, vestibuleClientId);
+            beforeEach(async function () {
+                const sandbox = getContextSandbox(this);
+                mockEndpointState(sandbox, { ...sharedStates.power.on, ...sharedStates.playback.playing, ...sharedStates.record.not_recording }, localEndpoint, true, vestibuleClientId);
             })
-            after(() => {
+            afterEach(() => {
                 resetDirectiveMocks()
             })
             it('StartRecording', async function () {
                 const messageContext = getDirectiveMessageContext('StartRecording');
-                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('RECORDING');
-                await testSuccessfulMessage(messageContext, eventContext)
+                const sandbox = getContextSandbox(this);
+                await testAsyncShadowMessage(sandbox, messageContext, eventContext, getDesiredState('RECORDING'))
             })
             it('StopRecording', async function () {
                 const messageContext = getDirectiveMessageContext('StopRecording');
                 const eventContext = getEventMessageContent('NOT_RECORDING');
-                await testSuccessfulMessage(messageContext, eventContext)
+                const sandbox = getContextSandbox(this);
+                await testAsyncShadowNoUpdateMessage(sandbox, messageContext, eventContext)
             })
-            it('should map an error', async function () {
-                const messageContext = getDirectiveMessageContext('StartRecording');
-                setupMqttMock(responseMockHandler, sandbox, messageContext)
-                await testMockErrorResponse({ ...messageContext, messageSuffix: mockErrorSuffix });
-            })
-
         })
         context('Power Off', function () {
-            before(async function () {
-                await setupPoweredOff();
+            beforeEach(async function () {
+                await setupPoweredOff(getContextSandbox(this));
             })
-            after(() => {
+            afterEach(() => {
                 resetDirectiveMocks()
             })
             it('should return NOT_IN_OPERATION', async function () {
@@ -153,10 +118,10 @@ describe('RecordController', function () {
 
         })
         context('Invalid Endpoint', function () {
-            before(async function () {
-                await setupInvalidEndpoint();
+            beforeEach(async function () {
+                await setupInvalidEndpoint(getContextSandbox(this));
             })
-            after(() => {
+            afterEach(() => {
                 resetDirectiveMocks()
             })
             it('should return NO_SUCH_ENDPOINT', async function () {
@@ -165,10 +130,10 @@ describe('RecordController', function () {
         })
     })
     context(('disconnected bridge'), function () {
-        before(async function () {
-            await setupDisconnectedBridge();
+        beforeEach(async function () {
+            await setupDisconnectedBridge(getContextSandbox(this));
         })
-        after(() => {
+        afterEach(() => {
             resetDirectiveMocks()
         })
         it('should return BRIDGE_UNREACHABLE', async function () {

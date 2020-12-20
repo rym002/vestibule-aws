@@ -1,16 +1,24 @@
+import { SSM } from 'aws-sdk';
 import { expect, use } from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
 import 'mocha';
 import { getParameters } from '../src/config';
-import { SSM } from 'aws-sdk';
+import { createContextSandbox, getContextSandbox, restoreSandbox } from './mock/Sandbox';
 import { mockSSM, resetSSM } from './mock/SSMMocks';
-import * as chaiAsPromised from 'chai-as-promised';
 
 use(chaiAsPromised);
 
 describe('Configuration', function () {
+    beforeEach(function(){
+        const sandbox = createContextSandbox(this)
+    })
+    afterEach(function(){
+        restoreSandbox(this)
+    })
 
-    before(async function () {
-        mockSSM((params: SSM.Types.GetParametersByPathRequest) => {
+    beforeEach(function () {
+        const sandbox = getContextSandbox(this)
+        mockSSM(sandbox, (params: SSM.Types.GetParametersByPathRequest) => {
             return {
                 Parameters: [
                     {
@@ -28,7 +36,7 @@ describe('Configuration', function () {
             };
         });
     })
-    after(() => {
+    afterEach(function () {
         resetSSM()
     })
     it('should verify String', async function () {
@@ -42,6 +50,6 @@ describe('Configuration', function () {
     it('should fail with missing group', async function () {
         const gId = 'invalidGroup'
         await expect(getParameters(gId)).to.rejected.and.eventually.
-        to.have.property('message').to.equal('Cannot Find Property Group ' + gId)
+            to.have.property('message').to.equal('Cannot Find Property Group ' + gId)
     })
 })

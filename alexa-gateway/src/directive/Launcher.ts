@@ -1,8 +1,8 @@
 import { Alexa, Discovery, Launcher, Video } from '@vestibule-link/alexa-video-skill-types';
-import { DirectiveErrorResponse, EndpointState, EndpointStateMetadata, ErrorHolder, SubType } from '@vestibule-link/iot-types';
-import { DirectiveMessage } from '.';
-import { EndpointRecord } from './Discovery';
-import { ContextPropertyReporter, createAlexaResponse, DefaultEndpointOnHandler, EndpointStateMetadataValue, EndpointStateValue, MessageHandlingFlags, NamedContextValue, shadowToDate } from "./Endpoint";
+import { DirectiveErrorResponse, EndpointState, ErrorHolder, SubType } from '@vestibule-link/iot-types';
+import { ContextPropertyReporter, DirectiveMessage, EndpointStateMetadata, EndpointStateMetadataValue, EndpointStateValue, NamedContextValue } from './DirectiveTypes';
+import { EndpointRecord } from './DiscoveryTypes';
+import { createAlexaResponse, DefaultEndpointOnHandler, MessageHandlingFlags, shadowToDate } from "./Endpoint";
 
 type DirectiveNamespace = Launcher.NamespaceType;
 const namespace: DirectiveNamespace = Launcher.namespace;

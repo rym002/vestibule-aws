@@ -1,27 +1,30 @@
-import { EndpointState, ErrorHolder, generateEndpointId, ResponseMessage, Shadow, SubType } from '@vestibule-link/iot-types';
+import { EndpointState, endpointTopicPrefix, ErrorHolder, ResponseMessage, Shadow, SubType } from '@vestibule-link/iot-types';
 import { IotData, SSM } from 'aws-sdk';
 import { assert, expect, use } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import 'mocha';
-import { createSandbox, match } from 'sinon';
-import { DirectiveMessage } from '../src/directive';
+import { match } from 'sinon';
+import { DirectiveMessage, SHADOW_PREFIX } from '../src/directive/DirectiveTypes';
 import { getShadow, sendMessage } from '../src/iot';
 import { sharedStates } from './directive/TestHelper';
 import { getIotTestParameters, localEndpoint, messageId, mockIotDataPublish, mockIotDataUpdateThingShadow, mockShadow, resetIotDataGetThingShadow, resetIotDataPublish, resetIotDataUpdateThingShadow, vestibuleClientId } from './mock/IotDataMock';
 import { mockMqtt } from './mock/MqttMock';
+import { createContextSandbox, getContextSandbox, restoreSandbox } from './mock/Sandbox';
 import { mockSSM, resetSSM } from './mock/SSMMocks';
 
 use(chaiAsPromised);
 
 describe('IOT', function () {
-    before(function () {
-        mockSSM((params: SSM.Types.GetParametersByPathRequest) => {
+    beforeEach(function () {
+        const sandbox = createContextSandbox(this)
+        mockSSM(sandbox, (params: SSM.Types.GetParametersByPathRequest) => {
             return {
                 Parameters: getIotTestParameters(params.Path)
             };
         });
     })
-    after(function () {
+    afterEach(function () {
+        restoreSandbox(this)
         resetSSM();
     })
     context('Shadow', function () {
@@ -29,7 +32,7 @@ describe('IOT', function () {
             const desiredState: EndpointState = {
                 "Alexa.PlaybackStateReporter": {
                     'playbackState': {
-                        state:'PLAYING'
+                        state: 'PLAYING'
                     }
                 }
             }
@@ -37,7 +40,7 @@ describe('IOT', function () {
                 resetIotDataUpdateThingShadow();
             })
             it('should send an async message', async function () {
-                const updateShadowSpy = mockIotDataUpdateThingShadow((params: IotData.UpdateThingShadowRequest): IotData.UpdateThingShadowResponse => {
+                const updateShadowSpy = mockIotDataUpdateThingShadow(getContextSandbox(this), (params: IotData.UpdateThingShadowRequest): IotData.UpdateThingShadowResponse => {
                     return {
                     }
                 })
@@ -49,13 +52,9 @@ describe('IOT', function () {
                     messageId,
                     localEndpoint
                 )
-                const shadow: Shadow = {
+                const shadow: Shadow<EndpointState> = {
                     state: {
-                        desired: {
-                            endpoints: {
-                                [generateEndpointId(localEndpoint)]: desiredState
-                            }
-                        }
+                        desired: desiredState
                     }
                 }
                 assert(updateShadowSpy.calledWith(match.has('thingName', vestibuleClientId)));
@@ -63,31 +62,24 @@ describe('IOT', function () {
                 expect(resp).to.have.property('shadow').eql(shadow);
             })
             context('Sync Messages', function () {
-                const sandbox = createSandbox()
-                before(function () {
+                beforeEach(function () {
+                    const sandbox = getContextSandbox(this)
                     mockMqtt(sandbox, (topic, mqttMock) => {
-                        if (topic == '$aws/things/' + vestibuleClientId + '/shadow/update/accepted') {
-                            const respShadow: Shadow = {
+                        if (topic == `$aws/things/${vestibuleClientId}/shadow/name/${localEndpoint}/update/accepted`) {
+                            const respShadow: Shadow<EndpointState> = {
                                 state: {
-                                    reported: {
-                                        endpoints: {
-                                            [generateEndpointId(localEndpoint)]: desiredState
-                                        }
-                                    }
+                                    reported: desiredState
                                 }
                             }
                             mqttMock.sendMessage(topic, respShadow);
                         }
                     })
-                })
-                after(function () {
-                    sandbox.restore()
-                })
-                beforeEach(function () {
-                    const updateShadowSpy = mockIotDataUpdateThingShadow((params: IotData.UpdateThingShadowRequest): IotData.UpdateThingShadowResponse => {
+                    const updateShadowSpy = mockIotDataUpdateThingShadow(sandbox, (params: IotData.UpdateThingShadowRequest): IotData.UpdateThingShadowResponse => {
                         return {
                         }
                     })
+                })
+                afterEach(function () {
                 })
                 it('should return a shadow', async function () {
                     const resp = await sendMessage(
@@ -102,7 +94,8 @@ describe('IOT', function () {
                     expect(resp).to.have.property('shadow').to.have.property('state').to.have.property('reported')
                 })
                 it('should throw timeout', async function () {
-                    await expect(sendMessage(
+                    getContextSandbox(this).clock.tickAsync('00:02')
+                    const message = sendMessage(
                         vestibuleClientId + '_bad',
                         {
                             desired: desiredState,
@@ -110,7 +103,8 @@ describe('IOT', function () {
                         },
                         '123',
                         localEndpoint
-                    )).to.rejected.and.eventually.to.include({
+                    )
+                    await expect(message).to.rejected.and.eventually.to.include({
                         errorType: 'Alexa'
                     }).have.property('errorPayload')
                         .have.property('message', 'No Reponse From Endpoint')
@@ -119,16 +113,12 @@ describe('IOT', function () {
             })
         })
         context('Lookup', function () {
-            const testResp: Shadow = {
+            const testResp: Shadow<EndpointState> = {
                 state: {
                     reported: {
-                        endpoints: {
-                            '123': {
-                                'Alexa.PlaybackStateReporter':{
-                                    playbackState:{
-                                        state:'PLAYING'
-                                    }
-                                }
+                        'Alexa.PlaybackStateReporter': {
+                            playbackState: {
+                                state: 'PLAYING'
                             }
                         }
                     }
@@ -138,17 +128,22 @@ describe('IOT', function () {
                 resetIotDataGetThingShadow();
             })
             it('should return the thing shadow', async function () {
-                const shadowSpy = mockShadow(testResp, vestibuleClientId)
-                const resp = await getShadow('vestibule-bridge-' + vestibuleClientId);
+                const shadows = new Map<string, Shadow<any>>()
+                shadows.set(localEndpoint, testResp)
+                const shadowSpy = mockShadow(getContextSandbox(this), shadows, vestibuleClientId)
+                const resp = await getShadow(`${SHADOW_PREFIX}${vestibuleClientId}`, localEndpoint);
                 assert(shadowSpy.calledWith({
-                    thingName: 'vestibule-bridge-' + vestibuleClientId
-                }))
+                    thingName: `${SHADOW_PREFIX}${vestibuleClientId}`,
+                    shadowName: localEndpoint
+                }), 'Get Shadow Not Called')
                 expect(resp).eql(testResp);
             })
 
             it('should throw error', async function () {
-                const shadowSpy = mockShadow(testResp, vestibuleClientId + '_bad')
-                await expect(getShadow(vestibuleClientId)).to.be.rejected
+                const shadows = new Map<string, Shadow<any>>()
+                shadows.set(localEndpoint, testResp)
+                const shadowSpy = mockShadow(getContextSandbox(this), shadows, vestibuleClientId + '_bad')
+                await expect(getShadow(`${SHADOW_PREFIX}${vestibuleClientId}`, localEndpoint)).to.be.rejected
                     .and.eventually.to.include({
                         errorType: 'Alexa'
                     }).have.property('errorPayload');
@@ -168,7 +163,7 @@ describe('IOT', function () {
                 payloadVersion: '3'
             },
             endpoint: {
-                endpointId: generateEndpointId(localEndpoint),
+                endpointId: localEndpoint,
                 scope: {
                     type: 'BearerToken',
                     token: ''
@@ -180,7 +175,7 @@ describe('IOT', function () {
             resetIotDataPublish()
         })
         it('should send an async message', async function () {
-            const publishSpy = mockIotDataPublish((params: IotData.PublishRequest) => {
+            const publishSpy = mockIotDataPublish(getContextSandbox(this), (params: IotData.PublishRequest) => {
                 return {}
             })
 
@@ -192,15 +187,17 @@ describe('IOT', function () {
                 messageId,
                 localEndpoint
             )
-            assert(publishSpy.calledWith(match.has('topic', 'vestibule-bridge/testClientId/alexa/directive/testProvider/testHost/Alexa.PlaybackController/Play')));
+            const topicPrefix = endpointTopicPrefix(vestibuleClientId, 'alexa', localEndpoint)
+            assert(publishSpy.calledWith(match.has('topic', `${topicPrefix}directive/Alexa.PlaybackController/Play`)),
+                'Invalid Topic Name');
             assert(publishSpy.calledWith(match.has('payload', JSON.stringify({
                 payload: payload.payload,
                 replyTopic: {}
-            }))));
+            }))), 'Invalid payload published on topic');
         })
         context('Sync', async function () {
-            const sandbox = createSandbox()
-            before(function () {
+            beforeEach(function () {
+                const sandbox = getContextSandbox(this)
                 mockMqtt(sandbox, (topic, mqttMock) => {
                     let resp: ResponseMessage<any> | undefined;
                     if (topic == 'vestibule-bridge/' + vestibuleClientId + '/alexa/event/' + messageId + '-success') {
@@ -229,12 +226,7 @@ describe('IOT', function () {
                         mqttMock.sendMessage(topic, resp);
                     }
                 })
-            })
-            after(function () {
-                sandbox.restore()
-            })
-            beforeEach(function () {
-                const publishSpy = mockIotDataPublish((params: IotData.PublishRequest) => {
+                const publishSpy = mockIotDataPublish(sandbox, (params: IotData.PublishRequest) => {
                     return {}
                 })
             })
@@ -253,14 +245,10 @@ describe('IOT', function () {
                 expect(resp).to.have.property('shadow')
                     .to.have.property('state')
                     .to.have.property('reported')
-                    .to.have.property('endpoints')
-                    .to.have.property(generateEndpointId(localEndpoint))
                     .to.eql(sharedStates.playback.playing)
                 expect(resp).to.have.property('shadow')
                     .to.have.property('metadata')
                     .to.have.property('reported')
-                    .to.have.property('endpoints')
-                    .to.have.property(generateEndpointId(localEndpoint))
                     .to.have.property('Alexa.PlaybackStateReporter')
                     .to.have.property('playbackState')
                     .to.have.property('state')
@@ -281,6 +269,7 @@ describe('IOT', function () {
                     .have.property('message', 'Test Error')
             })
             it('should timeout', async function () {
+                getContextSandbox(this).clock.tickAsync('00:02')
                 await expect(sendMessage(
                     vestibuleClientId,
                     {

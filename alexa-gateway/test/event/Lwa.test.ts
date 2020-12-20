@@ -1,36 +1,20 @@
-import { DynamoDB, SSM } from 'aws-sdk';
+import { DynamoDB } from 'aws-sdk';
 import * as AWSMock from 'aws-sdk-mock';
 import { assert, expect, use } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import { matches } from 'lodash';
 import 'mocha';
+import { SinonSandbox } from 'sinon';
 import { tokenManager } from '../../src/event';
 import { DeviceTokenResponse, GrantRequest, GrantTypes, RefreshTokenRequest } from '../../src/event/Lwa';
+import { createContextSandbox, getContextSandbox, restoreSandbox } from '../mock/Sandbox';
 import { mockAwsWithSpy } from '../mock/AwsMock';
-import { directiveMocks, resetDirectiveMocks } from '../mock/DirectiveMocks';
+import { directiveMocks, lwaParameters, resetDirectiveMocks } from '../mock/DirectiveMocks';
 import { vestibuleClientId } from '../mock/IotDataMock';
 import nock = require('nock');
 use(chaiAsPromised);
 
 describe('Lwa', function () {
-    const lwaParameters = {
-        clientId: 'lwa-client-id',
-        clientSecret: 'lwa-client-secret'
-    }
-    function getLwaTestParameters(path: string): SSM.Parameter[] {
-        return [
-            {
-                Name: path + '/lwa/clientId',
-                Type: 'String',
-                Value: lwaParameters.clientId
-            },
-            {
-                Name: path + '/lwa/clientSecret',
-                Type: 'String',
-                Value: lwaParameters.clientSecret
-            }
-        ]
-    }
     function createBaseToken(grantType: GrantTypes) {
         return {
             client_id: lwaParameters.clientId,
@@ -65,8 +49,9 @@ describe('Lwa', function () {
             .reply(responseCode, body);
 
     }
-    before(async function () {
-        await directiveMocks(getLwaTestParameters);
+    beforeEach(async function () {
+        const sandbox = createContextSandbox(this)
+        await directiveMocks(sandbox);
         const dynamoMatcher = matches(<DynamoDB.Types.BatchWriteItemInput>{
             RequestItems: {
                 vestibule_auth_tokens: [
@@ -103,7 +88,7 @@ describe('Lwa', function () {
                 ]
             }
         })
-        mockAwsWithSpy<DynamoDB.Types.BatchWriteItemInput, DynamoDB.Types.BatchWriteItemOutput>('DynamoDB', 'batchWriteItem', (req) => {
+        mockAwsWithSpy<DynamoDB.Types.BatchWriteItemInput, DynamoDB.Types.BatchWriteItemOutput>(sandbox, 'DynamoDB', 'batchWriteItem', (req) => {
             if (dynamoMatcher(req)) {
                 return {
 
@@ -113,14 +98,15 @@ describe('Lwa', function () {
             }
         })
     })
-    after(function () {
+    afterEach(function () {
+        restoreSandbox(this)
         resetDirectiveMocks()
         AWSMock.restore('DynamoDB', 'batchWriteItem');
         AWSMock.restore('DynamoDB', 'putItem');
     })
     context('getToken', function () {
-        function mockGetItem() {
-            return mockAwsWithSpy<DynamoDB.Types.GetItemInput, DynamoDB.Types.GetItemOutput>('DynamoDB', 'getItem', (req) => {
+        function mockGetItem(sandbox: SinonSandbox) {
+            return mockAwsWithSpy<DynamoDB.Types.GetItemInput, DynamoDB.Types.GetItemOutput>(sandbox, 'DynamoDB', 'getItem', (req) => {
                 let retId;
                 if (req.Key.user_id.S == vestibuleClientId + 'auth' && req.TableName == 'vestibule_auth_tokens') {
                     retId = successResponse.access_token;
@@ -138,8 +124,8 @@ describe('Lwa', function () {
 
         }
 
-        function mockPutItem() {
-            return mockAwsWithSpy<DynamoDB.Types.PutItemInput, DynamoDB.Types.PutItemOutput>('DynamoDB', 'putItem', (req) => {
+        function mockPutItem(sandbox: SinonSandbox) {
+            return mockAwsWithSpy<DynamoDB.Types.PutItemInput, DynamoDB.Types.PutItemOutput>(sandbox, 'DynamoDB', 'putItem', (req) => {
                 return {
 
                 }
@@ -147,7 +133,7 @@ describe('Lwa', function () {
         }
 
         beforeEach(function () {
-            mockGetItem();
+            mockGetItem(getContextSandbox(this));
         })
         it('should return the auth token', async function () {
             const token = await tokenManager.getToken(vestibuleClientId + 'auth')
@@ -155,7 +141,7 @@ describe('Lwa', function () {
         })
 
         it('should refresh the token and save to dynamodb', async function () {
-            let dynamoPutItemSpy = mockPutItem();
+            let dynamoPutItemSpy = mockPutItem(getContextSandbox(this));
             const grantRequest = createRefreshTokenRequest(successResponse.refresh_token)
             mockLwa(grantRequest, 200, successResponse)
             const token = await tokenManager.getToken(vestibuleClientId + 'refresh')

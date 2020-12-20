@@ -1,12 +1,13 @@
 import { Alexa, Directive, Event, Message } from '@vestibule-link/alexa-video-skill-types';
-import { EndpointState, ErrorHolder, generateEndpointId, SubType } from "@vestibule-link/iot-types";
-import { IotData, SSM } from 'aws-sdk';
+import { EndpointState, endpointTopicPrefix, ErrorHolder, SubType } from "@vestibule-link/iot-types";
+import { IotData } from 'aws-sdk';
 import { expect } from 'chai';
 import { SinonSandbox } from 'sinon';
+import { SHADOW_PREFIX } from '../../src/directive/DirectiveTypes';
 import { handler } from '../../src/directive/handler';
 import { generateValidScope } from "../mock/CognitoMock";
 import { directiveMocks, mockEndpointState } from '../mock/DirectiveMocks';
-import { localEndpoint, messageId, mockIotDataPublish, vestibuleClientId } from "../mock/IotDataMock";
+import { localEndpoint, messageId, mockIotDataPublish, mockIotDataUpdateThingShadow, vestibuleClientId } from "../mock/IotDataMock";
 import { fakeCallback, FakeContext } from '../mock/LambdaMock';
 import { mockMqtt, MockMqttOperations } from '../mock/MqttMock';
 
@@ -31,17 +32,17 @@ export const sharedStates: SharedStates = {
     playback: {
         playing: {
             'Alexa.PlaybackStateReporter': {
-                playbackState: {state:"PLAYING"}
+                playbackState: { state: "PLAYING" }
             }
         },
         paused: {
             'Alexa.PlaybackStateReporter': {
-                playbackState: {state:"PAUSED"}
+                playbackState: { state: "PAUSED" }
             }
         },
         stopped: {
             'Alexa.PlaybackStateReporter': {
-                playbackState: {state:"STOPPED"}
+                playbackState: { state: "STOPPED" }
             }
         }
     },
@@ -82,7 +83,7 @@ export const sharedStates: SharedStates = {
 
 export async function generateEndpoint(endpointSuffix: string): Promise<Message.EndpointRequest> {
     return {
-        endpointId: generateEndpointId(localEndpoint) + endpointSuffix,
+        endpointId: `${localEndpoint}${endpointSuffix}`,
         scope: await generateValidScope()
     }
 }
@@ -102,7 +103,7 @@ export function verifyErrorResponse(event: Event.Message, errorHolder: ErrorHold
     expect(event)
         .to.have.property('event')
         .to.have.property('endpoint')
-        .to.have.property('endpointId', generateEndpointId(localEndpoint) + endpointSuffix)
+        .to.have.property('endpointId', `${localEndpoint}${endpointSuffix}`)
 }
 
 export function verifyVideoErrorResponse(event: Event.Message, errorHolder: ErrorHolder) {
@@ -237,6 +238,31 @@ export async function testSuccessfulMessage(directiveContext: DirectiveMessageCo
     verifySuccessResponse(ret, eventContext, '')
 }
 
+export async function testAsyncShadowMessage(sandbox: SinonSandbox, directiveContext: DirectiveMessageContext, eventContext: EventMessageContext, desiredState: EndpointState) {
+    const shadowSpy = mockIotDataUpdateThingShadow(sandbox, (params) => {
+        return {
+        }
+    })
+    const ret = await callHandler(directiveContext, '');
+    verifySuccessResponse(ret, eventContext, '')
+    expect(shadowSpy.calledWith({
+        thingName: vestibuleClientId,
+        shadowName: localEndpoint,
+        payload: {
+            desired: desiredState
+        }
+    }), 'Invalid Desired Shadow')
+}
+
+export async function testAsyncShadowNoUpdateMessage(sandbox: SinonSandbox, directiveContext: DirectiveMessageContext, eventContext: EventMessageContext) {
+    const shadowSpy = mockIotDataUpdateThingShadow(sandbox, (params) => {
+        return {
+        }
+    })
+    const ret = await callHandler(directiveContext, '');
+    verifySuccessResponse(ret, eventContext, '')
+    expect(shadowSpy.notCalled, 'Shadow Update not expected')
+}
 export async function testMockErrorResponse(messageContext: DirectiveMessageContext) {
     const ret = await callHandler(messageContext, '');
     verifyErrorResponse(ret, errors.bridgeError, '');
@@ -247,7 +273,7 @@ export async function testMockVideoErrorResponse(messageContext: DirectiveMessag
     verifyVideoErrorResponse(ret, errors.videoError);
 }
 export function generateReplyTopicName(messageSuffix: string) {
-    return 'vestibule-bridge/vestibule-bridge-' + vestibuleClientId + '/alexa/event/' + messageId + '-' + messageSuffix;
+    return `vestibule-bridge/vestibule-bridge-${vestibuleClientId}/alexa/event/${messageId}-${messageSuffix}`;
 }
 export function verifySuccessResponse(event: Event.Message, eventContext: EventMessageContext, endpointSuffix: string) {
     expect(event)
@@ -261,7 +287,7 @@ export function verifySuccessResponse(event: Event.Message, eventContext: EventM
     expect(event)
         .to.have.property('event')
         .to.have.property('endpoint')
-        .to.have.property('endpointId', generateEndpointId(localEndpoint) + endpointSuffix);
+        .to.have.property('endpointId', `${localEndpoint}${endpointSuffix}`);
     expect(event)
         .to.have.property('event')
         .to.have.property('payload').eql(eventContext.response);
@@ -270,42 +296,40 @@ export function verifySuccessResponse(event: Event.Message, eventContext: EventM
         .to.have.property('properties');
 }
 
-export function emptyParameters(path: string): SSM.Parameter[] {
-    return []
-}
-export async function setupDisconnectedBridge() {
-    await directiveMocks(emptyParameters);
-    mockEndpointState({}, localEndpoint, false, vestibuleClientId);
+export async function setupDisconnectedBridge(sandbox: SinonSandbox) {
+    await directiveMocks(sandbox);
+    mockEndpointState(sandbox, {}, localEndpoint, false, vestibuleClientId);
 }
 
-export async function setupInvalidEndpoint() {
-    await directiveMocks(emptyParameters);
-    mockEndpointState({}, localEndpoint, true, vestibuleClientId);
+export async function setupInvalidEndpoint(sandbox: SinonSandbox) {
+    await directiveMocks(sandbox);
+    mockEndpointState(sandbox, {}, localEndpoint, true, vestibuleClientId);
 }
 
-export async function setupPoweredOff() {
-    await directiveMocks(emptyParameters);
-    mockEndpointState({ ...sharedStates.power.off }, localEndpoint, true, vestibuleClientId);
+export async function setupPoweredOff(sandbox: SinonSandbox) {
+    await directiveMocks(sandbox);
+    mockEndpointState(sandbox, { ...sharedStates.power.off }, localEndpoint, true, vestibuleClientId);
 }
 
-export async function setupNotWatchingTv() {
-    await directiveMocks(emptyParameters);
-    mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing }, localEndpoint, true, vestibuleClientId);
+export async function setupNotWatchingTv(sandbox: SinonSandbox) {
+    await directiveMocks(sandbox);
+    mockEndpointState(sandbox, { ...sharedStates.power.on, ...sharedStates.playback.playing }, localEndpoint, true, vestibuleClientId);
 }
 
-export async function setupNotPlayingContent() {
-    await directiveMocks(emptyParameters);
-    mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.stopped }, localEndpoint, true, vestibuleClientId);
+export async function setupNotPlayingContent(sandbox: SinonSandbox) {
+    await directiveMocks(sandbox);
+    mockEndpointState(sandbox, { ...sharedStates.power.on, ...sharedStates.playback.stopped }, localEndpoint, true, vestibuleClientId);
 }
-export async function setupWatchingTv() {
-    await directiveMocks(emptyParameters);
-    mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing, ...sharedStates.channel }, localEndpoint, true, vestibuleClientId);
+export async function setupWatchingTv(sandbox: SinonSandbox) {
+    await directiveMocks(sandbox);
+    mockEndpointState(sandbox, { ...sharedStates.power.on, ...sharedStates.playback.playing, ...sharedStates.channel }, localEndpoint, true, vestibuleClientId);
 }
 
-export function setupMqttMock(subscribeHandler: (topic: string | string[], mqttMock: MockMqttOperations) => void, sandbox: SinonSandbox, messageContext: DirectiveMessageContext) {
+export function setupMqttMock(subscribeHandler: (topic: string, mqttMock: MockMqttOperations) => void, sandbox: SinonSandbox, messageContext: DirectiveMessageContext) {
     mockMqtt(sandbox, subscribeHandler)
-    mockIotDataPublish((params: IotData.PublishRequest) => {
-        expect(params.topic).to.eql('vestibule-bridge/vestibule-bridge-' + vestibuleClientId + '/alexa/directive/' + localEndpoint.provider + '/' + localEndpoint.host + '/' + messageContext.header.namespace + '/' + messageContext.header.name)
+    mockIotDataPublish(sandbox, (params: IotData.PublishRequest) => {
+        const topicPrefix = endpointTopicPrefix(`${SHADOW_PREFIX}${vestibuleClientId}`, 'alexa', localEndpoint)
+        expect(params.topic).to.eql(`${topicPrefix}directive/${messageContext.header.namespace}/${messageContext.header.name}`)
         return {}
     })
 }

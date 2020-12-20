@@ -1,9 +1,9 @@
 import { Discovery, SeekController } from '@vestibule-link/alexa-video-skill-types';
-import { EndpointState, LocalEndpoint, SubType } from '@vestibule-link/iot-types';
-import { DirectiveMessage, DirectiveResponseByNamespace } from '.';
+import { EndpointState, SubType } from '@vestibule-link/iot-types';
+import { DirectiveMessage, DirectiveResponseByNamespace, ValidEndpointState } from './DirectiveTypes';
 import { TopicResponse } from '../iot';
-import { EndpointRecord } from './Discovery';
-import { DefaultNotStoppedHandler, MessageHandlingFlags, TrackedEndpointShadow } from './Endpoint';
+import { EndpointRecord } from './DiscoveryTypes';
+import { DefaultNotStoppedHandler, MessageHandlingFlags } from './Endpoint';
 
 type DirectiveNamespace = SeekController.NamespaceType;
 const namespace: DirectiveNamespace = SeekController.namespace;
@@ -21,7 +21,7 @@ class Handler extends DefaultNotStoppedHandler<DirectiveNamespace> {
         }
     }
     createResponse(message: SubType<DirectiveMessage, DirectiveNamespace>,
-        trackedEndpoint: TrackedEndpointShadow, localEndpoint: LocalEndpoint,
+        endpointShadow: ValidEndpointState,
         iotResp: TopicResponse): SubType<DirectiveResponseByNamespace, DirectiveNamespace> {
         const response = iotResp.response ? iotResp.response : { payload: {} }
         return {

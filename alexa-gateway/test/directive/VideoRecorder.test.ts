@@ -2,10 +2,10 @@ import { VideoRecorder } from '@vestibule-link/alexa-video-skill-types';
 import { EndpointCapability, ResponseMessage } from '@vestibule-link/iot-types';
 import { expect } from 'chai';
 import 'mocha';
-import { createSandbox } from 'sinon';
 import { resetDirectiveMocks } from '../mock/DirectiveMocks';
 import { resetIotDataPublish } from '../mock/IotDataMock';
 import { MockMqttOperations } from '../mock/MqttMock';
+import { createContextSandbox, getContextSandbox, restoreSandbox } from '../mock/Sandbox';
 import { callHandler, DirectiveMessageContext, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupMqttMock, setupNotPlayingContent, setupPoweredOff, testDisconnectedBridge, testInvalidEndpoint, testMockVideoErrorResponse, testPoweredOffEndpoint } from './TestHelper';
 
 describe('VideoRecorder', function () {
@@ -46,10 +46,15 @@ describe('VideoRecorder', function () {
         },
         context: []
     }
+    beforeEach(function () {
+        const sandbox = createContextSandbox(this)
+    })
+    afterEach(function () {
+        restoreSandbox(this)
+    })
 
     context(('connected bridge'), function () {
-        const sandbox = createSandbox()
-        const responseMockHandler = (topic: string | string[], mqttMock: MockMqttOperations) => {
+        const responseMockHandler = (topic: string, mqttMock: MockMqttOperations) => {
             let resp: ResponseMessage<any> | undefined;
             switch (topic) {
                 case generateReplyTopicName('SearchAndRecord'):
@@ -73,27 +78,20 @@ describe('VideoRecorder', function () {
                     }
                     break;
             }
-            if (resp && 'string' == typeof topic) {
+            if (resp) {
                 mqttMock.sendMessage(topic, resp);
             }
         }
-        afterEach(function () {
-            sandbox.restore()
-        })
         context('SearchAndRecord', function () {
-            before(async function () {
-                await setupNotPlayingContent()
+            beforeEach(async function () {
+                await setupNotPlayingContent(getContextSandbox(this))
+                setupMqttMock(responseMockHandler, getContextSandbox(this), defaultMessageContext)
             })
-            after(() => {
+            afterEach(function () {
                 resetDirectiveMocks()
-            })
-            beforeEach(function (){
-                setupMqttMock(responseMockHandler,sandbox,defaultMessageContext)
-            })
-            afterEach(function (){
                 resetIotDataPublish()
             })
-        it('should send a message', async function () {
+            it('should send a message', async function () {
                 const event = await callHandler(defaultMessageContext, '');
                 expect(event)
                     .to.have.property('event')
@@ -117,10 +115,10 @@ describe('VideoRecorder', function () {
 
         })
         context('Power Off', function () {
-            before(async function () {
-                await setupPoweredOff();
+            beforeEach(async function () {
+                await setupPoweredOff(getContextSandbox(this));
             })
-            after(() => {
+            afterEach(() => {
                 resetDirectiveMocks()
             })
             it('should return NOT_IN_OPERATION', async function () {
@@ -129,10 +127,10 @@ describe('VideoRecorder', function () {
 
         })
         context('Invalid Endpoint', function () {
-            before(async function () {
-                await setupInvalidEndpoint();
+            beforeEach(async function () {
+                await setupInvalidEndpoint(getContextSandbox(this));
             })
-            after(() => {
+            afterEach(() => {
                 resetDirectiveMocks()
             })
             it('should return NO_SUCH_ENDPOINT', async function () {
@@ -141,10 +139,10 @@ describe('VideoRecorder', function () {
         })
     })
     context(('disconnected bridge'), function () {
-        before(async function () {
-            await setupDisconnectedBridge();
+        beforeEach(async function () {
+            await setupDisconnectedBridge(getContextSandbox(this));
         })
-        after(() => {
+        afterEach(() => {
             resetDirectiveMocks()
         })
         it('should return BRIDGE_UNREACHABLE', async function () {

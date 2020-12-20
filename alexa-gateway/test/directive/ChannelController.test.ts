@@ -1,10 +1,10 @@
 import { ChannelController } from '@vestibule-link/alexa-video-skill-types';
 import { EndpointCapability, ResponseMessage } from '@vestibule-link/iot-types';
 import 'mocha';
-import { createSandbox } from 'sinon';
 import { resetDirectiveMocks } from '../mock/DirectiveMocks';
 import { resetIotDataPublish } from '../mock/IotDataMock';
 import { MockMqttOperations } from '../mock/MqttMock';
+import { createContextSandbox, getContextSandbox, restoreSandbox } from '../mock/Sandbox';
 import { DirectiveMessageContext, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupMqttMock, setupNotWatchingTv, setupPoweredOff, setupWatchingTv, sharedStates, testDisconnectedBridge, testInvalidEndpoint, testMockErrorResponse, testNotWatchingTvEndpoint, testPoweredOffEndpoint, testSuccessfulMessage } from './TestHelper';
 
 describe('ChannelController', function () {
@@ -58,10 +58,15 @@ describe('ChannelController', function () {
         },
         response: {}
     }
+    beforeEach(function () {
+        const sandbox = createContextSandbox(this)
+    })
+    afterEach(function () {
+        restoreSandbox(this)
+    })
 
     context(('connected bridge'), function () {
-        const sandbox = createSandbox()
-        const responseMockHandler = (topic: string | string[], mqttMock: MockMqttOperations) => {
+        const responseMockHandler = (topic: string, mqttMock: MockMqttOperations) => {
             let resp: ResponseMessage<any> | undefined;
             const channelTopic = generateReplyTopicName(changeChannelMessageSuffix);
             const skipTopic = generateReplyTopicName(skipChannelsMessageSuffix);
@@ -81,27 +86,23 @@ describe('ChannelController', function () {
                 }
 
             }
-            if (resp && 'string' == typeof topic) {
+            if (resp) {
                 mqttMock.sendMessage(topic, resp);
             }
         }
-        afterEach(function () {
-            sandbox.restore()
-        })
-
         context('Watching TV', function () {
-            before(async function () {
-                await setupWatchingTv();
+            beforeEach(async function () {
+                await setupWatchingTv(getContextSandbox(this));
             })
-            after(() => {
+            afterEach(() => {
                 resetDirectiveMocks()
             })
             context('SkipChannels', function () {
                 const messageContext = skipChannelsContext;
-                beforeEach(function (){
-                    setupMqttMock(responseMockHandler,sandbox,messageContext)
+                beforeEach(function () {
+                    setupMqttMock(responseMockHandler, getContextSandbox(this), messageContext)
                 })
-                afterEach(function (){
+                afterEach(function () {
                     resetIotDataPublish()
                 })
                 it('should send a request to change channel', async function () {
@@ -113,10 +114,10 @@ describe('ChannelController', function () {
             })
             context('ChangeChannel', function () {
                 const messageContext = changeChannelContext;
-                beforeEach(function (){
-                    setupMqttMock(responseMockHandler,sandbox,messageContext)
+                beforeEach(function () {
+                    setupMqttMock(responseMockHandler, getContextSandbox(this), messageContext)
                 })
-                afterEach(function (){
+                afterEach(function () {
                     resetIotDataPublish()
                 })
                 it('should change channel if not on the current channel', async function () {
@@ -136,10 +137,10 @@ describe('ChannelController', function () {
             })
         })
         context('Not Watching TV', function () {
-            before(async function () {
-                await setupNotWatchingTv();
+            beforeEach(async function () {
+                await setupNotWatchingTv(getContextSandbox(this));
             })
-            after(() => {
+            afterEach(() => {
                 resetDirectiveMocks()
             })
             context('SkipChannels', function () {
@@ -150,10 +151,10 @@ describe('ChannelController', function () {
             })
             context('ChangeChannel', function () {
                 const messageContext = changeChannelContext;
-                beforeEach(function (){
-                    setupMqttMock(responseMockHandler,sandbox,messageContext)
+                beforeEach(function () {
+                    setupMqttMock(responseMockHandler, getContextSandbox(this), messageContext)
                 })
-                afterEach(function (){
+                afterEach(function () {
                     resetIotDataPublish()
                 })
                 it('should send a message', async function () {
@@ -163,10 +164,10 @@ describe('ChannelController', function () {
             })
         })
         context('Power Off', function () {
-            before(async function () {
-                await setupPoweredOff();
+            beforeEach(async function () {
+                await setupPoweredOff(getContextSandbox(this));
             })
-            after(() => {
+            afterEach(() => {
                 resetDirectiveMocks()
             })
             context('SkipChannels', function () {
@@ -185,10 +186,10 @@ describe('ChannelController', function () {
 
         })
         context('Invalid Endpoint', function () {
-            before(async function () {
-                await setupInvalidEndpoint();
+            beforeEach(async function () {
+                await setupInvalidEndpoint(getContextSandbox(this));
             })
-            after(() => {
+            afterEach(() => {
                 resetDirectiveMocks()
             })
             context('SkipChannels', function () {
@@ -207,10 +208,10 @@ describe('ChannelController', function () {
         })
     })
     context(('disconnected bridge'), function () {
-        before(async function () {
-            await setupDisconnectedBridge();
+        beforeEach(async function () {
+            await setupDisconnectedBridge(getContextSandbox(this));
         })
-        after(() => {
+        afterEach(() => {
             resetDirectiveMocks()
         })
         context('SkipChannels', function () {

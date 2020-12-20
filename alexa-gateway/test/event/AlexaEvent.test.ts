@@ -1,5 +1,5 @@
 import { Event, EventGateway } from '@vestibule-link/alexa-video-skill-types';
-import { DynamoDB, SSM } from 'aws-sdk';
+import { DynamoDB } from 'aws-sdk';
 import * as AWSMock from 'aws-sdk-mock';
 import { assert, expect, use } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
@@ -8,28 +8,18 @@ import { sendAlexaEvent } from '../../src/event';
 import { mockAwsWithSpy } from '../mock/AwsMock';
 import { directiveMocks, resetDirectiveMocks } from '../mock/DirectiveMocks';
 import { messageId, vestibuleClientId } from '../mock/IotDataMock';
+import { createContextSandbox, getContextSandbox, restoreSandbox } from '../mock/Sandbox';
 import nock = require('nock');
 use(chaiAsPromised);
 
 describe('AlexaEvent', function () {
-    const alexaParameters = {
-        gatewayUri: 'http://gateway/event/test'
-    }
-    function getAlexaTestParameters(path: string): SSM.Parameter[] {
-        return [
-            {
-                Name: path + '/alexa/gatewayUri',
-                Type: 'String',
-                Value: alexaParameters.gatewayUri
-            }
-        ]
-    }
-
-    before(async function () {
-        await directiveMocks(getAlexaTestParameters);
+    beforeEach(async function () {
+        const sandbox = createContextSandbox(this)
+        await directiveMocks(sandbox);
     })
 
-    after(function () {
+    afterEach(function () {
+        restoreSandbox(this)
         resetDirectiveMocks()
     })
     function mockAlexaGateway(request: Event.Message, token: string, responseCode: number, body: nock.ReplyBody) {
@@ -60,11 +50,13 @@ describe('AlexaEvent', function () {
         }
     }
     it('should delete the token if SKILL_DISABLED_EXCEPTION', async function () {
-        const dynamoBatchWriteSpy = mockAwsWithSpy<DynamoDB.Types.BatchWriteItemInput, DynamoDB.Types.BatchGetItemOutput>('DynamoDB', 'batchWriteItem', (req) => {
-            return {
+        const sandbox = getContextSandbox(this)
+        const dynamoBatchWriteSpy = mockAwsWithSpy<DynamoDB.Types.BatchWriteItemInput, DynamoDB.Types.BatchGetItemOutput>(
+            sandbox, 'DynamoDB', 'batchWriteItem', (req) => {
+                return {
 
-            }
-        })
+                }
+            })
         const errorResponse: EventGateway.AlexaErrorResponse = {
             header: {
                 messageId: 'test',

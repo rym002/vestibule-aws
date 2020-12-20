@@ -1,11 +1,11 @@
 import { PlaybackController, PlaybackStateReporter } from '@vestibule-link/alexa-video-skill-types';
-import { EndpointCapability, ResponseMessage } from '@vestibule-link/iot-types';
+import { EndpointCapability, EndpointState, ResponseMessage } from '@vestibule-link/iot-types';
 import 'mocha';
-import { createSandbox } from 'sinon';
 import { directiveMocks, mockEndpointState, resetDirectiveMocks } from '../mock/DirectiveMocks';
-import { localEndpoint, resetIotDataPublish, vestibuleClientId } from '../mock/IotDataMock';
+import { localEndpoint, resetIotDataPublish, resetIotDataUpdateThingShadow, vestibuleClientId } from '../mock/IotDataMock';
 import { MockMqttOperations } from '../mock/MqttMock';
-import { DirectiveMessageContext, emptyParameters, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupMqttMock, setupPoweredOff, sharedStates, testDisconnectedBridge, testInvalidEndpoint, testMockErrorResponse, testPoweredOffEndpoint, testStoppedEndpoint, testSuccessfulMessage } from './TestHelper';
+import { createContextSandbox, getContextSandbox, restoreSandbox } from '../mock/Sandbox';
+import { DirectiveMessageContext, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupMqttMock, setupPoweredOff, sharedStates, testAsyncShadowMessage, testAsyncShadowNoUpdateMessage, testDisconnectedBridge, testInvalidEndpoint, testPoweredOffEndpoint, testStoppedEndpoint, testSuccessfulMessage } from './TestHelper';
 
 describe('PlaybackController', function () {
     const capabilities: EndpointCapability = {
@@ -45,12 +45,27 @@ describe('PlaybackController', function () {
             }]
         }
     }
+    function getDesiredState(state: PlaybackStateReporter.States): EndpointState {
+        return {
+            'Alexa.PlaybackStateReporter': {
+                playbackState: {
+                    state: state
+                }
+            }
+        }
+    }
+    beforeEach(async function(){
+        const sandbox = createContextSandbox(this)
+        await directiveMocks(sandbox);
+    })
+    afterEach(function(){
+        resetDirectiveMocks()
+        restoreSandbox(this)
+    })
     context(('connected bridge'), function () {
-        const sandbox = createSandbox()
-        const responseMockHandler = (topic: string | string[], mqttMock: MockMqttOperations) => {
+        const responseMockHandler = (topic: string, mqttMock: MockMqttOperations) => {
             let resp: ResponseMessage<any> | undefined;
             switch (topic) {
-                case generateReplyTopicName('Play'):
                 case generateReplyTopicName('StartOver'):
                 case generateReplyTopicName('FastForward'):
                 case generateReplyTopicName('Next'):
@@ -66,28 +81,6 @@ describe('PlaybackController', function () {
                         error: false
                     }
                     break;
-                case generateReplyTopicName('Pause'):
-                    resp = {
-                        payload: {},
-                        stateChange: {
-                            'Alexa.PlaybackStateReporter': {
-                                playbackState: { state: 'PAUSED' }
-                            }
-                        },
-                        error: false
-                    }
-                    break;
-                case generateReplyTopicName('Stop'):
-                    resp = {
-                        payload: {},
-                        stateChange: {
-                            'Alexa.PlaybackStateReporter': {
-                                playbackState: { state: 'STOPPED' }
-                            }
-                        },
-                        error: false
-                    }
-                    break;
                 case generateReplyTopicName(mockErrorSuffix):
                     resp = {
                         payload: errors.bridgeError,
@@ -95,148 +88,138 @@ describe('PlaybackController', function () {
                     }
                     break;
             }
-            if (resp && 'string' == typeof topic) {
+            if (resp) {
                 mqttMock.sendMessage(topic, resp);
             }
         }
         afterEach(function () {
-            sandbox.restore()
             resetIotDataPublish()
+            resetIotDataUpdateThingShadow()
         })
 
         context('PLAYING', function () {
-            before(async function () {
-                await directiveMocks(emptyParameters);
-                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing }, localEndpoint, true, vestibuleClientId);
-            })
-            after(() => {
-                resetDirectiveMocks()
+            beforeEach(async function () {
+                const sandbox = getContextSandbox(this);
+                mockEndpointState(sandbox, { ...sharedStates.power.on, ...sharedStates.playback.playing }, localEndpoint, true, vestibuleClientId);
             })
             it('Play should not sent a message', async function () {
                 const messageContext = getDirectiveMessageContext('Play');
-                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
-                await testSuccessfulMessage(messageContext, eventContext)
+                const sandbox = getContextSandbox(this);
+                await testAsyncShadowNoUpdateMessage(sandbox, messageContext, eventContext)
             })
             it('Pause should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Pause');
-                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PAUSED');
-                await testSuccessfulMessage(messageContext, eventContext)
+                const sandbox = getContextSandbox(this);
+                await testAsyncShadowMessage(sandbox, messageContext, eventContext, getDesiredState('PAUSED'))
             })
             it('Stop should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Stop');
-                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('STOPPED');
-                await testSuccessfulMessage(messageContext, eventContext)
+                const sandbox = getContextSandbox(this);
+                await testAsyncShadowMessage(sandbox, messageContext, eventContext, getDesiredState('STOPPED'))
             })
             it('StartOver should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('StartOver');
+                const sandbox = getContextSandbox(this);
                 setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
             })
             it('FastForward should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('FastForward');
+                const sandbox = getContextSandbox(this);
                 setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
             })
             it('Next should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Next');
+                const sandbox = getContextSandbox(this);
                 setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
             })
             it('Previous should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Previous');
+                const sandbox = getContextSandbox(this);
                 setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
             })
             it('Rewind should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Rewind');
+                const sandbox = getContextSandbox(this);
                 setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
-            })
-            it('should map an error', async function () {
-                const messageContext = getDirectiveMessageContext('Rewind');
-                setupMqttMock(responseMockHandler, sandbox, messageContext)
-                await testMockErrorResponse({ ...messageContext, messageSuffix: mockErrorSuffix });
             })
         })
 
         context('PAUSED', function () {
-            before(async function () {
-                await directiveMocks(emptyParameters);
-                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.paused }, localEndpoint, true, vestibuleClientId);
-            })
-            after(() => {
-                resetDirectiveMocks()
+            beforeEach(async function () {
+                const sandbox = getContextSandbox(this);
+                mockEndpointState(sandbox, { ...sharedStates.power.on, ...sharedStates.playback.paused }, localEndpoint, true, vestibuleClientId);
             })
             it('Play should sent a message', async function () {
                 const messageContext = getDirectiveMessageContext('Play');
-                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
-                await testSuccessfulMessage(messageContext, eventContext)
+                const sandbox = getContextSandbox(this);
+                await testAsyncShadowMessage(sandbox, messageContext, eventContext, getDesiredState('PLAYING'))
             })
             it('Pause should not send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Pause');
-                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PAUSED');
-                await testSuccessfulMessage(messageContext, eventContext)
+                const sandbox = getContextSandbox(this);
+                await testAsyncShadowNoUpdateMessage(sandbox, messageContext, eventContext)
             })
             it('Stop should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Stop');
-                setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('STOPPED');
-                await testSuccessfulMessage(messageContext, eventContext)
+                const sandbox = getContextSandbox(this);
+                await testAsyncShadowMessage(sandbox, messageContext, eventContext, getDesiredState('STOPPED'))
             })
             it('StartOver should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('StartOver');
+                const sandbox = getContextSandbox(this);
                 setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
             })
             it('FastForward should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('FastForward');
+                const sandbox = getContextSandbox(this);
                 setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
             })
             it('Next should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Next');
+                const sandbox = getContextSandbox(this);
                 setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
             })
             it('Previous should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Previous');
+                const sandbox = getContextSandbox(this);
                 setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
             })
             it('Rewind should send a message', async function () {
                 const messageContext = getDirectiveMessageContext('Rewind');
+                const sandbox = getContextSandbox(this);
                 setupMqttMock(responseMockHandler, sandbox, messageContext)
                 const eventContext = getEventMessageContent('PLAYING');
                 await testSuccessfulMessage(messageContext, eventContext)
             })
-            it('should map an error', async function () {
-                const messageContext = getDirectiveMessageContext('Rewind');
-                setupMqttMock(responseMockHandler, sandbox, messageContext)
-                await testMockErrorResponse({ ...messageContext, messageSuffix: mockErrorSuffix });
-            })
-
         })
         context('STOPPED', function () {
-            before(async function () {
-                await directiveMocks(emptyParameters);
-                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.stopped }, localEndpoint, true, vestibuleClientId);
-            })
-            after(() => {
-                resetDirectiveMocks()
+            beforeEach(async function () {
+                const sandbox = getContextSandbox(this);
+                mockEndpointState(sandbox, { ...sharedStates.power.on, ...sharedStates.playback.stopped }, localEndpoint, true, vestibuleClientId);
             })
             it('Play should return Content is stopped', async function () {
                 const messageContext = getDirectiveMessageContext('Play');
@@ -273,10 +256,10 @@ describe('PlaybackController', function () {
 
         })
         context('Power Off', function () {
-            before(async function () {
-                await setupPoweredOff();
+            beforeEach(async function () {
+                await setupPoweredOff(getContextSandbox(this));
             })
-            after(() => {
+            afterEach(() => {
                 resetDirectiveMocks()
             })
             it('should return NOT_IN_OPERATION', async function () {
@@ -285,10 +268,10 @@ describe('PlaybackController', function () {
 
         })
         context('Invalid Endpoint', function () {
-            before(async function () {
-                await setupInvalidEndpoint();
+            beforeEach(async function () {
+                await setupInvalidEndpoint(getContextSandbox(this));
             })
-            after(() => {
+            afterEach(() => {
                 resetDirectiveMocks()
             })
             it('should return NO_SUCH_ENDPOINT', async function () {
@@ -297,10 +280,10 @@ describe('PlaybackController', function () {
         })
     })
     context(('disconnected bridge'), function () {
-        before(async function () {
-            await setupDisconnectedBridge();
+        beforeEach(async function () {
+            await setupDisconnectedBridge(getContextSandbox(this));
         })
-        after(() => {
+        afterEach(() => {
             resetDirectiveMocks()
         })
         it('should return BRIDGE_UNREACHABLE', async function () {

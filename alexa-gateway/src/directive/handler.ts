@@ -2,7 +2,8 @@ import { Directive, Event } from '@vestibule-link/alexa-video-skill-types';
 import { DirectiveErrorResponse, DirectiveResponse, SubType } from '@vestibule-link/iot-types';
 import { Callback, Context, Handler } from 'aws-lambda';
 import { getSub } from '../authentication';
-import { DirectiveMessage, findDirectiveHandler } from '.';
+import { findDirectiveHandler } from '.';
+import { DirectiveMessage } from './DirectiveTypes';
 
 const logger = console.debug;
 

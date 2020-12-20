@@ -1,10 +1,11 @@
-import { ErrorHolder, LocalEndpoint, ResponseMessage, Shadow } from '@vestibule-link/iot-types';
+import { EndpointState, ErrorHolder, ResponseMessage, Shadow } from '@vestibule-link/iot-types';
 import { IotData } from 'aws-sdk';
 import { MessageHandlingFlags } from '../directive/Endpoint';
 import { findHandler as findShadowHandler } from './Shadow';
 import { findHandler as findTopicHandler } from './Topic';
 import { getParameters } from '../config';
 
+export const BRIDGE_SHADOW = "bridge"
 let iotData: IotData | undefined = undefined;
 
 export async function getIotData(): Promise<IotData> {
@@ -23,14 +24,18 @@ export async function getIotParameters() {
     return await getParameters<IotParameters>('iot');
 }
 
-export async function getShadow(thingName: string): Promise<Shadow> {
+export async function getShadow(thingName: string, shadowName: string): Promise<Shadow<EndpointState>> {
     try {
         console.time('getShadow');
         const iotData = await getIotData();
         const resp = await iotData.getThingShadow({
-            thingName: thingName
+            thingName: thingName,
+            shadowName: shadowName
         }).promise();
-        return <Shadow>JSON.parse(<string>resp.payload);
+        if (!resp.payload) {
+            throw new Error('Unknown Endpoint')
+        }
+        return <Shadow<EndpointState>>JSON.parse(<string>resp.payload);
     } catch (e) {
         const error: ErrorHolder = {
             errorType: 'Alexa',
@@ -45,9 +50,20 @@ export async function getShadow(thingName: string): Promise<Shadow> {
     }
 }
 
-export function ensureDeviceActive(shadow: Shadow) {
-    const connected = shadow.state && shadow.state.reported && shadow.state.reported && shadow.state.reported.connected
-    if (!connected) {
+export async function ensureDeviceActive(thingName: string) {
+    try {
+        console.time('getShadow');
+        const iotData = await getIotData();
+        const resp = await iotData.getThingShadow({
+            thingName: thingName,
+            shadowName: BRIDGE_SHADOW
+        }).promise();
+        const shadow = <Shadow<BridgeState>>JSON.parse(<string>resp.payload);
+        if (!shadow.state || !shadow.state.reported || !shadow.state.reported.connected) {
+            throw new Error("Bridge not connected")
+        }
+    } catch (e) {
+        console.log('Error retrieving from bridge %o', e)
         const error: ErrorHolder = {
             errorType: 'Alexa',
             errorPayload: {
@@ -56,25 +72,29 @@ export function ensureDeviceActive(shadow: Shadow) {
             }
         }
         throw error;
+    } finally {
+        console.timeEnd('getShadow');
     }
-
 }
 
+export interface BridgeState {
+    connected: boolean
+}
 export interface TopicResponse {
     response?: ResponseMessage<any>;
-    shadow?: Shadow;
+    shadow?: Shadow<EndpointState>;
 }
 
 export async function sendMessage(clientId: string,
     flags: MessageHandlingFlags,
     messageId: string,
-    localEndpoint: LocalEndpoint): Promise<TopicResponse> {
+    endpointId: string): Promise<TopicResponse> {
     let ret: TopicResponse
     const sync = flags.sync || false
     if (flags.desired) {
-        ret = await findShadowHandler(clientId, messageId, localEndpoint, sync).sendMessage(flags.desired);
+        ret = await findShadowHandler(clientId, messageId, endpointId, sync).sendMessage(flags.desired);
     } else if (flags.request) {
-        ret = await findTopicHandler(clientId, messageId, localEndpoint, sync).sendMessage(flags.request);
+        ret = await findTopicHandler(clientId, messageId, endpointId, sync).sendMessage(flags.request);
     } else {
         ret = {
             response: {

@@ -180,7 +180,7 @@ Resources:
             Action:
               - iot:Subscribe
             Resource:
-              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/$aws/things/vestibule-bridge-*/shadow/update/accepted
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/$aws/things/vestibule-bridge-*/shadow/name/*/update/accepted
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/vestibule-bridge/vestibule-bridge-*/alexa/event/*
           -
             Effect: Allow
@@ -188,13 +188,13 @@ Resources:
               - iot:Receive
             Resource:
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/vestibule-bridge/vestibule-bridge-*/alexa/event/*
-              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/vestibule-bridge-*/shadow/update/accepted
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/vestibule-bridge-*/shadow/name/*/update/accepted
           -
             Effect: Allow
             Action:
               - iot:Publish
             Resource:
-              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/vestibule-bridge/vestibule-bridge-*/alexa/directive/*
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/vestibule-bridge/vestibule-bridge-*/alexa/endpoint/*/directive/**
           -
             Effect: Allow
             Action:
@@ -251,36 +251,36 @@ Resources:
             Effect: Allow
             Action: iot:Subscribe
             Resource:
-              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/${!iot:Connection.Thing.ThingTypeName}/${!iot:Connection.Thing.ThingName}/alexa/directive/*
-              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/get/*
-              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/update/*
-              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/delete/*
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/${!iot:Connection.Thing.ThingTypeName}/${!iot:Connection.Thing.ThingName}/alexa/*/directive/*
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/name/*/get/*
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/name/*/update/*
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/name/*/delete/*
           -
             Effect: Allow
             Action: iot:Receive
             Resource:
-              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${!iot:Connection.Thing.ThingTypeName}/${!iot:Connection.Thing.ThingName}/alexa/directive/*
-              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/update/*
-              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/get/*
-              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/delete/*
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${!iot:Connection.Thing.ThingTypeName}/${!iot:Connection.Thing.ThingName}/alexa/*/directive/*
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/name/*/update/*
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/name/*/get/*
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/name/*/delete/*
           -
             Effect: Allow
             Action: iot:Publish
             Resource:
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${!iot:Connection.Thing.ThingTypeName}/${!iot:Connection.Thing.ThingName}/alexa/event/*
-              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/update
-              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/get
-              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${!iot:Connection.Thing.ThingTypeName}/${!iot:Connection.Thing.ThingName}/alexa/endpoint/*
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/name/*/update
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/name/*/get
+              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${!iot:Connection.Thing.ThingTypeName}/${!iot:Connection.Thing.ThingName}/alexa/endpoint/*/settings
           -
             Effect: Allow
             Action: 
               - iot:GetThingShadow
               - iot:UpdateThingShadow
-            Resource: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:thing/${!iot:Connection.Thing.ThingName}
+            Resource: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:thing/${!iot:Connection.Thing.ThingName}/*
           -
             Effect: Allow
             Action: iot:Connect
-            Resource: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:client/${!iot:Connection.Thing.ThingName}
+            Resource: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:client/${!iot:Connection.Thing.ThingName}/*
   IOTClientConnectedRule:
     Type: AWS::IoT::TopicRule
     Properties:
@@ -293,7 +293,7 @@ Resources:
           -
             Republish:
               RoleArn: !GetAtt VestibuleIotRuleRole.Arn
-              Topic: $$aws/things/${clientId}/shadow/update
+              Topic: $$aws/things/${clientId}/shadow/name/bridge/update
         Description: Update thing shadow connected value
         RuleDisabled: false
         AwsIotSqlVersion: 2016-03-23
@@ -332,8 +332,8 @@ Resources:
         RuleDisabled: false
         AwsIotSqlVersion: 2016-03-23
         Sql: >-
-          SELECT substring(topic(2),length('vestibule-bridge-')) as user_id, concat(topic(5),'@',topic(6)) as endpointId, * 
-          FROM 'vestibule-bridge/+/alexa/endpoint/+/+'
+          SELECT substring(topic(2),length('vestibule-bridge-')) as user_id, topic(5) as endpointId, * 
+          FROM 'vestibule-bridge/+/alexa/endpoint/+/settings'
   IOTEventChangeReportRule:
     Type: AWS::IoT::TopicRule
     Properties:
@@ -352,9 +352,10 @@ Resources:
         Sql: >-
           SELECT {
             'userSub':substring(topic(3),length('vestibule-bridge-')),
+            'endpointId':topic(6),
             'shadow':*
           }
-          FROM '$aws/things/+/shadow/update/accepted'
+          FROM '$aws/things/+/shadow/name/+/update/accepted'
   VestibuleIotRuleRole:
     Type: AWS::IAM::Role
     Properties:
@@ -382,7 +383,7 @@ Resources:
           -
             Effect: Allow
             Action: iot:Publish
-            Resource: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/vestibule-bridge-*/shadow/update
+            Resource: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/vestibule-bridge-*/shadow/name/bridge/update
           -
             Effect: Allow
             Action: dynamodb:PutItem

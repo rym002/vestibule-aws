@@ -1,6 +1,6 @@
 import { Authorization, Message } from '@vestibule-link/alexa-video-skill-types';
 import { DirectiveErrorResponse, ErrorHolder, SubType } from '@vestibule-link/iot-types';
-import { DirectiveHandler, DirectiveMessage, DirectiveResponseByNamespace } from '.';
+import { DirectiveHandler, DirectiveMessage, DirectiveResponseByNamespace } from './DirectiveTypes';
 import { tokenManager } from '../event'
 
 

@@ -1,4 +1,4 @@
-import { ErrorHolder, Shadow, LocalEndpoint, EndpointState, generateEndpointId } from "@vestibule-link/iot-types";
+import { ErrorHolder, Shadow, EndpointState } from "@vestibule-link/iot-types";
 import { TopicResponse, getIotParameters, getIotData } from ".";
 import { IotReponseHandler } from "./Sync";
 
@@ -10,17 +10,12 @@ class AsyncHandler implements ShadowHandler {
     protected logPrefix = 'IOT_SHADOW';
     constructor(protected readonly clientId: string,
         protected readonly messageId: string,
-        private readonly localEndpoint: LocalEndpoint) {
+        protected readonly endpointId: string) {
     }
     private createShadow(desired: EndpointState) {
-        const endpointId = generateEndpointId(this.localEndpoint);
         return {
             state: {
-                desired: {
-                    endpoints: {
-                        [endpointId]: desired
-                    }
-                }
+                desired: desired
             }
         }
     }
@@ -37,7 +32,7 @@ class AsyncHandler implements ShadowHandler {
         }
     }
 
-    private async updateShadow(shadowUpdate: Shadow) {
+    private async updateShadow(shadowUpdate: Shadow<EndpointState>) {
         try {
             const iotData = await getIotData();
             const update = await iotData.updateThingShadow({
@@ -59,13 +54,14 @@ class AsyncHandler implements ShadowHandler {
 
 
 class SyncHandler extends AsyncHandler {
+    private static readonly decoder = new TextDecoder('utf8');
     constructor(clientId: string,
         messageId: string,
-        localEndpoint: LocalEndpoint) {
-        super(clientId, messageId, localEndpoint);
+        endpointId: string) {
+        super(clientId, messageId, endpointId);
     }
     private getReplyTopic() {
-        return '$aws/things/' + this.clientId + '/shadow/update/accepted'
+        return `$aws/things/${this.clientId}/shadow/name/${this.endpointId}/update/accepted`
     }
     protected logEndMessage() {
     }
@@ -78,8 +74,8 @@ class SyncHandler extends AsyncHandler {
         })
     }
     private createResponse(resolve: CallableFunction) {
-        return (payload: any) => {
-            const shadowResponse: Shadow = JSON.parse(payload);
+        return (payload: ArrayBuffer) => {
+            const shadowResponse: Shadow<EndpointState> = JSON.parse(SyncHandler.decoder.decode(payload));
             const topicResponse: TopicResponse = {
                 shadow: shadowResponse
             }
@@ -88,10 +84,10 @@ class SyncHandler extends AsyncHandler {
     }
 }
 
-export function findHandler(clientId: string, messageId: string, localEndpoint: LocalEndpoint, responseRequired: boolean): ShadowHandler {
+export function findHandler(clientId: string, messageId: string, endpointId: string, responseRequired: boolean): ShadowHandler {
     if (responseRequired) {
-        return new SyncHandler(clientId, messageId, localEndpoint);
+        return new SyncHandler(clientId, messageId, endpointId);
     } else {
-        return new AsyncHandler(clientId, messageId, localEndpoint);
+        return new AsyncHandler(clientId, messageId, endpointId);
     }
 }

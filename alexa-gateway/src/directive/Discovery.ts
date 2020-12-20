@@ -1,8 +1,8 @@
 import { Discovery, Message } from '@vestibule-link/alexa-video-skill-types';
-import { DirectiveErrorResponse, EndpointCapability, EndpointInfo, SubType } from '@vestibule-link/iot-types';
+import { DirectiveErrorResponse, SubType } from '@vestibule-link/iot-types';
 import { DynamoDB } from 'aws-sdk';
 import * as _ from 'lodash';
-import { DirectiveHandler, DirectiveMessage, DirectiveResponseByNamespace } from '.';
+import { DirectiveHandler, DirectiveMessage, DirectiveResponseByNamespace } from './DirectiveTypes';
 import ChannelController from './ChannelController';
 import EndpointHealth from './EndpointHealth';
 import Launcher from './Launcher';
@@ -15,12 +15,9 @@ import SeekController from './SeekController';
 import VideoRecorder from './VideoRecorder';
 import WakeOnLANController from './WOL';
 import KeypadController from './KeypadController'
+import { CapabilityHandler, EndpointRecord, EndpointKey, listToTypedStringArray } from './DiscoveryTypes';
 
 type DirectiveNamespace = Discovery.NamespaceType;
-
-export interface CapabilityHandler<NS extends Discovery.CapabilityInterfaces> {
-    getCapability(capabilities: NonNullable<SubType<EndpointRecord, NS>>): SubType<Discovery.NamedCapabilities, NS>
-}
 
 type CapabilityHandlers = {
     [NS in Discovery.CapabilityInterfaces]: CapabilityHandler<NS>
@@ -41,62 +38,9 @@ const handlers: CapabilityHandlers = {
     'Alexa.KeypadController': KeypadController
 }
 
-interface EndpointKey {
-    [key: string]: DynamoDB.AttributeValue
-    user_id: {
-        S: DynamoDB.StringAttributeValue
-    }
-    endpointId: {
-        S: DynamoDB.StringAttributeValue
-    }
-}
-
-export type EndpointRecord = EndpointKey & {
-    [K in keyof EndpointInfo]:
-    EndpointInfo[K] extends string
-    ? {
-        S: DynamoDB.StringAttributeValue
-    }
-    : K extends 'displayCategories'
-    ? {
-        L: {
-            S: Discovery.DisplayCategoryType
-        }[]
-    }
-    : {
-        M: {
-            [key: string]: {
-                S: DynamoDB.StringAttributeValue
-            }
-        }
-    }
-} & {
-        [K in keyof Required<EndpointCapability>]?:
-        Required<EndpointCapability>[K] extends never
-        ? never
-        : Required<EndpointCapability>[K] extends string[]
-        ? {
-            L: {
-                S: Required<EndpointCapability>[K][number]
-            }[]
-        }
-        : Required<EndpointCapability>[K] extends boolean
-        ? {
-            B: DynamoDB.BooleanAttributeValue
-        }
-        : never
-    }
 
 const ENDPOINT_TABLE = process.env['endpoint_table'] || 'vestibule_endpoint';
 
-export function listToTypedStringArray<T extends string>(values?: { S: T }[]): T[] {
-    if (values) {
-        return values.map(value => {
-            return value.S
-        })
-    }
-    return []
-}
 class Handler implements DirectiveHandler<DirectiveNamespace>{
     private _db: DynamoDB | undefined;
     get db() {

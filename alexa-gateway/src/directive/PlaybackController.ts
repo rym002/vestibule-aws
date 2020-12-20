@@ -1,7 +1,7 @@
 import { Discovery, PlaybackController, PlaybackStateReporter } from "@vestibule-link/alexa-video-skill-types";
 import { EndpointState, SubType } from "@vestibule-link/iot-types";
-import { DirectiveMessage } from ".";
-import { EndpointRecord, listToTypedStringArray } from "./Discovery";
+import { DirectiveMessage } from "./DirectiveTypes";
+import { EndpointRecord, listToTypedStringArray } from "./DiscoveryTypes";
 import { createAlexaResponse, DefaultNotStoppedHandler, MessageHandlingFlags } from "./Endpoint";
 
 type DirectiveNamespace = PlaybackController.NamespaceType;
@@ -34,9 +34,22 @@ class Handler extends DefaultNotStoppedHandler<DirectiveNamespace> {
         if (desiredState == currentState) {
             return {};
         } else {
-            return {
-                request: message,
-                sync: true
+            if (desiredState){
+                return {
+                    sync: false,
+                    desired:{
+                        [PlaybackStateReporter.namespace]:{
+                            playbackState:{
+                                state:desiredState
+                            }
+                        }
+                    }
+                }
+            }else{
+                return {
+                    request: message,
+                    sync: false
+                }    
             }
         }
     }

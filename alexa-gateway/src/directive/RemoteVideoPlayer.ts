@@ -1,7 +1,7 @@
 import { Discovery, RemoteVideoPlayer } from '@vestibule-link/alexa-video-skill-types';
 import { EndpointState, SubType } from '@vestibule-link/iot-types';
-import { DirectiveMessage } from '.';
-import { EndpointRecord } from './Discovery';
+import { DirectiveMessage } from './DirectiveTypes';
+import { EndpointRecord } from './DiscoveryTypes';
 import { createAlexaResponse, DefaultEndpointOnHandler, MessageHandlingFlags } from './Endpoint';
 
 type DirectiveNamespace = RemoteVideoPlayer.NamespaceType;
@@ -17,7 +17,7 @@ class Handler extends DefaultEndpointOnHandler<DirectiveNamespace> {
     getEndpointMessageFlags(message: SubType<DirectiveMessage, DirectiveNamespace>, states: EndpointState): MessageHandlingFlags {
         return {
             request: message,
-            sync: true
+            sync: false
         }
     }
 }

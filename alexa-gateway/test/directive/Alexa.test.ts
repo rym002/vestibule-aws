@@ -2,9 +2,16 @@ import { EndpointCapability, EndpointState } from '@vestibule-link/iot-types';
 import 'mocha';
 import { directiveMocks, mockEndpointState, resetDirectiveMocks } from '../mock/DirectiveMocks';
 import { localEndpoint, vestibuleClientId } from '../mock/IotDataMock';
-import { callHandler, DirectiveMessageContext, EventMessageContext, testDisconnectedBridge, testInvalidEndpoint, testSuccessfulMessage, emptyParameters } from './TestHelper';
+import { createContextSandbox, getContextSandbox, restoreSandbox } from '../mock/Sandbox';
+import { callHandler, DirectiveMessageContext, EventMessageContext, testDisconnectedBridge, testInvalidEndpoint, testSuccessfulMessage } from './TestHelper';
 
 describe('Alexa', function () {
+    beforeEach(function(){
+        const sandbox = createContextSandbox(this)
+    })
+    afterEach(function(){
+        restoreSandbox(this)
+    })
     context('ReportState', function () {
         const header = {
             namespace: 'Alexa',
@@ -36,15 +43,18 @@ describe('Alexa', function () {
             },
             response: {}
         }
+        beforeEach(async function () {
+            const sandbox = getContextSandbox(this)
+            await directiveMocks(sandbox);
+        })
+        afterEach(function () {
+            resetDirectiveMocks()
+        })
         context('connected bridge', function () {
-            before(async function () {
-                await directiveMocks(emptyParameters);
-                mockEndpointState(state, localEndpoint, true, vestibuleClientId);
+            beforeEach(function () {
+                const sandbox = getContextSandbox(this)
+                mockEndpointState(sandbox, state, localEndpoint, true, vestibuleClientId);
             })
-            after(() => {
-                resetDirectiveMocks()
-            })
-
             it('should return the State', async function () {
                 const ret = await callHandler(messageContext, '')
                 await testSuccessfulMessage(messageContext, eventContext)
@@ -56,12 +66,9 @@ describe('Alexa', function () {
         })
 
         context('disconnected bridge', function () {
-            before(async function () {
-                await directiveMocks(emptyParameters);
-                mockEndpointState(state, localEndpoint, false, vestibuleClientId);
-            })
-            after(() => {
-                resetDirectiveMocks()
+            beforeEach(function () {
+                const sandbox = getContextSandbox(this)
+                mockEndpointState(sandbox, state, localEndpoint, false, vestibuleClientId);
             })
 
             it('should return BRIDGE_UNREACHABLE', async function () {

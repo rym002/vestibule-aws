@@ -6,21 +6,29 @@ import 'mocha';
 import { getSub } from '../src/authentication';
 import { authenticationProps, generateToken, generateValidScope, getCognitoTestParameters, getSharedKey, setupCognitoMock } from './mock/CognitoMock';
 import { vestibuleClientId } from './mock/IotDataMock';
+import { createContextSandbox, getContextSandbox, restoreSandbox } from './mock/Sandbox';
 import { mockSSM, resetSSM } from './mock/SSMMocks';
 
 use(chaiAsPromised);
 
 describe('Authentication', function () {
+    beforeEach(function(){
+        const sandbox = createContextSandbox(this)
+    })
+    afterEach(function(){
+        restoreSandbox(this)
+    })
     describe('BearerToken', function () {
         beforeEach(async function () {
-            mockSSM((params: SSM.Types.GetParametersByPathRequest) => {
+            const sandbox = getContextSandbox(this)
+            mockSSM(sandbox, (params: SSM.Types.GetParametersByPathRequest) => {
                 return {
                     Parameters: getCognitoTestParameters(params.Path)
                 };
             });
             await setupCognitoMock();
         })
-        afterEach(() => {
+        afterEach(function () {
             resetSSM()
         })
         it('should return the sub for a valid token', async function () {

@@ -2,11 +2,11 @@ import { SeekController } from '@vestibule-link/alexa-video-skill-types';
 import { EndpointCapability, ResponseMessage } from '@vestibule-link/iot-types';
 import { expect } from 'chai';
 import 'mocha';
-import { createSandbox } from 'sinon';
 import { directiveMocks, mockEndpointState, resetDirectiveMocks } from '../mock/DirectiveMocks';
 import { localEndpoint, resetIotDataPublish, vestibuleClientId } from '../mock/IotDataMock';
 import { MockMqttOperations } from '../mock/MqttMock';
-import { callHandler, DirectiveMessageContext, emptyParameters, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupMqttMock, setupPoweredOff, sharedStates, testDisconnectedBridge, testInvalidEndpoint, testMockErrorResponse, testPoweredOffEndpoint } from './TestHelper';
+import { createContextSandbox, getContextSandbox, restoreSandbox } from '../mock/Sandbox';
+import { callHandler, DirectiveMessageContext, errors, EventMessageContext, generateReplyTopicName, mockErrorSuffix, setupDisconnectedBridge, setupInvalidEndpoint, setupMqttMock, setupPoweredOff, sharedStates, testDisconnectedBridge, testInvalidEndpoint, testMockErrorResponse, testPoweredOffEndpoint } from './TestHelper';
 
 describe('SeekController', function () {
     const capabilities: EndpointCapability = {
@@ -36,9 +36,14 @@ describe('SeekController', function () {
             }]
         }
     }
+    beforeEach(function () {
+        const sandbox = createContextSandbox(this)
+    })
+    afterEach(function () {
+        restoreSandbox(this)
+    })
     context(('connected bridge'), function () {
-        const sandbox = createSandbox()
-        const responseMockHandler = (topic: string | string[], mqttMock: MockMqttOperations) => {
+        const responseMockHandler = (topic: string, mqttMock: MockMqttOperations) => {
             let resp: ResponseMessage<any> | undefined;
             switch (topic) {
                 case generateReplyTopicName('AdjustSeekPosition'):
@@ -54,27 +59,20 @@ describe('SeekController', function () {
                     }
                     break;
             }
-            if (resp && 'string' == typeof topic) {
+            if (resp) {
                 mqttMock.sendMessage(topic, resp);
             }
         }
-        afterEach(function () {
-            sandbox.restore()
-        })
 
         context('AdjustSeekPosition', function () {
-            before(async function () {
-                await directiveMocks(emptyParameters);
-                mockEndpointState({ ...sharedStates.power.on, ...sharedStates.playback.playing }, localEndpoint, true, vestibuleClientId);
-
-            })
-            after(() => {
-                resetDirectiveMocks()
-            })
-            beforeEach(function () {
+            beforeEach(async function () {
+                const sandbox = getContextSandbox(this);
+                await directiveMocks(sandbox);
+                mockEndpointState(sandbox, { ...sharedStates.power.on, ...sharedStates.playback.playing }, localEndpoint, true, vestibuleClientId);
                 setupMqttMock(responseMockHandler, sandbox, defaultMessageContext)
             })
             afterEach(function () {
+                resetDirectiveMocks()
                 resetIotDataPublish()
             })
 
@@ -98,10 +96,10 @@ describe('SeekController', function () {
             })
         })
         context('Power Off', function () {
-            before(async function () {
-                await setupPoweredOff();
+            beforeEach(async function () {
+                await setupPoweredOff(getContextSandbox(this));
             })
-            after(() => {
+            afterEach(() => {
                 resetDirectiveMocks()
             })
             it('should return NOT_IN_OPERATION', async function () {
@@ -110,10 +108,10 @@ describe('SeekController', function () {
 
         })
         context('Invalid Endpoint', function () {
-            before(async function () {
-                await setupInvalidEndpoint();
+            beforeEach(async function () {
+                await setupInvalidEndpoint(getContextSandbox(this));
             })
-            after(() => {
+            afterEach(() => {
                 resetDirectiveMocks()
             })
             it('should return NO_SUCH_ENDPOINT', async function () {
@@ -122,10 +120,10 @@ describe('SeekController', function () {
         })
     })
     context(('disconnected bridge'), function () {
-        before(async function () {
-            await setupDisconnectedBridge();
+        beforeEach(async function () {
+            await setupDisconnectedBridge(getContextSandbox(this));
         })
-        after(() => {
+        afterEach(() => {
             resetDirectiveMocks()
         })
         it('should return BRIDGE_UNREACHABLE', async function () {

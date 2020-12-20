@@ -1,33 +1,27 @@
-import { device } from "aws-iot-device-sdk";
 import { IotParameters } from ".";
-import { promisify } from "util";
 import { ErrorHolder } from "@vestibule-link/iot-types";
-
-
+import { io, mqtt, iot } from 'aws-iot-device-sdk-v2'
+import { CrtError } from 'aws-crt'
 export class IotReponseHandler {
     private timeoutId: NodeJS.Timeout | undefined;
-    private readonly iotClient: device;
-    private readonly connectPromise:Promise<void>;
+    private readonly connection: mqtt.MqttClientConnection;
+    private readonly connectPromise: Promise<boolean>;
     constructor(clientId: string,
         private readonly replyTopic: string,
         private readonly messageId: string,
         private readonly logPrefix: string,
         private readonly responseConverter: (payload: any) => void,
         private readonly parameters: IotParameters) {
-        this.iotClient = new device({
-            host: parameters.endpoint,
-            debug: true,
-            clientId: 'vestibule-gateway-' + clientId,
-            protocol: 'wss'
-        });
-        this.connectPromise = new Promise((resolve,reject)=>{
-            this.iotClient.on('connect',()=>{
-                resolve()
-            })
-            this.iotClient.on('error',(error)=>{
-                reject(error)
-            })
-        })
+        const bootstrap = new io.ClientBootstrap()
+        const client = new mqtt.MqttClient(bootstrap)
+        const config = iot.AwsIotMqttConnectionConfigBuilder
+            .new_with_websockets()
+            .with_client_id(clientId)
+            .with_endpoint(parameters.endpoint)
+            .build()
+        this.connection = client.new_connection(config)
+
+        this.connectPromise = this.connection.connect()
     }
     protected logEndMessage() {
         console.timeEnd(this.logPrefix + ' ' + this.messageId);
@@ -36,12 +30,10 @@ export class IotReponseHandler {
     async subscribeResponse(reject: CallableFunction) {
         this.timeoutId = setTimeout(this.topicTimeout.bind(this), Number(this.parameters.timeout), reject);
         const replyTopic = this.replyTopic;
-        const subscribePromise = promisify(this.iotClient.subscribe.bind(this.iotClient));
         try {
             await this.connectPromise;
-            const granted = await subscribePromise(replyTopic, { qos: 0 });
-            this.iotClient.on('message', this.createMessageHandler().bind(this));
-            this.iotClient.on('error', this.createErrorHandler(reject).bind(this));
+            const granted = await this.connection.subscribe(replyTopic, mqtt.QoS.AtMostOnce, this.createMessageHandler().bind(this));
+            this.connection.on('error', this.createErrorHandler(reject).bind(this));
         } catch (err) {
             const error: ErrorHolder = {
                 errorType: 'Alexa',
@@ -57,10 +49,10 @@ export class IotReponseHandler {
 
 
     private createErrorHandler(reject: CallableFunction) {
-        return (err: any) => {
+        return async (err: CrtError) => {
             console.log(err);
             this.logEndMessage();
-            this.iotClient.end(true);
+            await this.connection.disconnect();
             const error: ErrorHolder = {
                 errorType: 'Alexa',
                 errorPayload: {
@@ -72,9 +64,9 @@ export class IotReponseHandler {
         }
     }
 
-    private closeDevice() {
+    private async closeDevice() {
         this.logEndMessage();
-        this.iotClient.end(false);
+        await this.connection.disconnect();
     }
     private topicTimeout(reject: any): void {
         this.closeDevice();
@@ -89,12 +81,12 @@ export class IotReponseHandler {
     }
 
     private createMessageHandler() {
-        return (topic: string, payload: any) => {
-            this.iotClient.unsubscribe(topic);
+        return async (topic: string, payload: any) => {
+            await this.connection.unsubscribe(topic);
             if (this.timeoutId) {
                 clearTimeout(this.timeoutId);
             }
-            this.closeDevice();
+            await this.closeDevice();
             this.responseConverter(payload);
         }
     }

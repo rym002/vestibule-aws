@@ -1,8 +1,8 @@
 import { Alexa, Discovery, RecordController } from '@vestibule-link/alexa-video-skill-types';
-import { EndpointState, EndpointStateMetadata, SubType } from '@vestibule-link/iot-types';
-import { DirectiveMessage } from '.';
-import { EndpointRecord } from './Discovery';
-import { ContextPropertyReporter, createAlexaResponse, DefaultNotStoppedHandler, EndpointStateMetadataValue, EndpointStateValue, MessageHandlingFlags, NamedContextValue, shadowToDate } from './Endpoint';
+import { EndpointState, SubType } from '@vestibule-link/iot-types';
+import { ContextPropertyReporter, DirectiveMessage, EndpointStateMetadata, EndpointStateMetadataValue, EndpointStateValue, NamedContextValue } from './DirectiveTypes';
+import { EndpointRecord } from './DiscoveryTypes';
+import { createAlexaResponse, DefaultNotStoppedHandler, MessageHandlingFlags, shadowToDate } from './Endpoint';
 
 type DirectiveNamespace = RecordController.NamespaceType;
 const namespace: DirectiveNamespace = RecordController.namespace;
@@ -54,8 +54,12 @@ class Handler extends DefaultNotStoppedHandler<DirectiveNamespace> implements Co
             return {}
         } else {
             return {
-                request: message,
-                sync: true
+                desired: {
+                    [namespace]: {
+                        RecordingState: desiredState
+                    }
+                },
+                sync: false
             }
 
         }

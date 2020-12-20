@@ -1,6 +1,7 @@
-import { ErrorHolder, generateEndpointId, generateTopic, LocalEndpoint, RequestMessage, ResponseMessage, Shadow, SubType, topicConfig } from "@vestibule-link/iot-types";
+import { EndpointState, endpointTopicPrefix, ErrorHolder, RequestMessage, ResponseMessage, Shadow, SubType } from "@vestibule-link/iot-types";
+import { DirectiveMessage } from "../directive/DirectiveTypes";
 import { getIotData, getIotParameters, TopicResponse } from ".";
-import { DirectiveMessage, stateToMetadata } from "../directive";
+import { stateToMetadata } from "../directive";
 import { IotReponseHandler } from "./Sync";
 
 export interface TopicHandler {
@@ -10,14 +11,14 @@ export interface TopicHandler {
 class AsyncHandler implements TopicHandler {
     protected logPrefix = 'IOT_RPC';
     constructor(protected readonly clientId: string,
-        protected readonly localEndpoint: LocalEndpoint,
+        protected readonly endpointId: string,
         protected readonly messageId: string) {
     }
     protected getTopicPrefix() {
-        return topicConfig.root + this.clientId;
+        return endpointTopicPrefix(this.clientId, 'alexa', this.endpointId)
     }
     private getTopic(topicPrefix: string, message: SubType<DirectiveMessage, any>) {
-        return topicPrefix + topicConfig.directive + generateTopic(this.localEndpoint) + '/' + message.namespace + '/' + message.name;
+        return `${topicPrefix}directive/${message.namespace}/${message.name}`;
     }
 
     protected getReplyTopic(): string | undefined {
@@ -67,15 +68,16 @@ class AsyncHandler implements TopicHandler {
 }
 
 class SyncHandler extends AsyncHandler {
+    private static readonly decoder = new TextDecoder('utf8');
     constructor(
         clientId: string,
-        localEndpoint: LocalEndpoint,
+        endpointId: string,
         messageId: string) {
-        super(clientId, localEndpoint, messageId);
+        super(clientId, endpointId, messageId);
     }
 
     protected getReplyTopic() {
-        return this.getTopicPrefix() + '/alexa/event/' + this.messageId;
+        return `vestibule-bridge/${this.clientId}/alexa/event/${this.messageId}`;
     }
     protected logEndMessage() {
         // Will be logged when the response is received
@@ -94,29 +96,20 @@ class SyncHandler extends AsyncHandler {
     }
 
     private createResponse(resolve: CallableFunction, reject: CallableFunction) {
-        return (payload: any) => {
-            const parsedPayload: ResponseMessage<any> = JSON.parse(payload);
+        return (payload: ArrayBuffer) => {
+            const parsedPayload: ResponseMessage<any> = JSON.parse(SyncHandler.decoder.decode(payload));
             if (parsedPayload.error) {
                 reject(parsedPayload.payload);
             } else {
-                let shadow: Shadow | undefined;
+                let shadow: Shadow<EndpointState> | undefined;
                 if (parsedPayload.stateChange) {
-                    const endpointId = generateEndpointId(this.localEndpoint);
                     const metadata = stateToMetadata(parsedPayload.stateChange)
                     shadow = {
                         metadata: {
-                            reported: {
-                                endpoints: {
-                                    [endpointId]: metadata
-                                }
-                            }
+                            reported: metadata
                         },
                         state: {
-                            reported: {
-                                endpoints: {
-                                    [endpointId]: parsedPayload.stateChange
-                                }
-                            }
+                            reported: parsedPayload.stateChange
                         }
                     }
                 }
@@ -130,10 +123,10 @@ class SyncHandler extends AsyncHandler {
     }
 }
 
-export function findHandler(clientId: string, messageId: string, localEndpoint: LocalEndpoint, responseRequired: boolean): TopicHandler {
+export function findHandler(clientId: string, messageId: string, endpointId: string, responseRequired: boolean): TopicHandler {
     if (responseRequired) {
-        return new SyncHandler(clientId, localEndpoint, messageId);
+        return new SyncHandler(clientId, endpointId, messageId);
     } else {
-        return new AsyncHandler(clientId, localEndpoint, messageId);
+        return new AsyncHandler(clientId, endpointId, messageId);
     }
 }

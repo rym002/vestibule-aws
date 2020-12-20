@@ -1,7 +1,8 @@
 import { Alexa, Discovery, PlaybackStateReporter } from '@vestibule-link/alexa-video-skill-types';
-import { EndpointState, EndpointStateMetadata, SubType } from '@vestibule-link/iot-types';
-import { CapabilityHandler, EndpointRecord } from './Discovery';
-import { ContextPropertyReporter, EndpointStateMetadataValue, EndpointStateValue, NamedContextValue, shadowToDate } from './Endpoint';
+import { EndpointState, SubType } from '@vestibule-link/iot-types';
+import { ContextPropertyReporter, EndpointStateMetadata, EndpointStateMetadataValue, EndpointStateValue, NamedContextValue } from './DirectiveTypes';
+import { CapabilityHandler, EndpointRecord } from './DiscoveryTypes';
+import { shadowToDate } from './Endpoint';
 
 type DirectiveNamespace = PlaybackStateReporter.NamespaceType;
 const namespace: DirectiveNamespace = PlaybackStateReporter.namespace;
