@@ -252,7 +252,6 @@ Resources:
             Action: iot:Subscribe
             Resource:
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/${!iot:Connection.Thing.ThingTypeName}/${!iot:Connection.Thing.ThingName}/alexa/*/directive/*
-              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/name/*/get/*
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/name/*/update/*
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topicfilter/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/name/*/delete/*
           -
@@ -261,7 +260,6 @@ Resources:
             Resource:
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${!iot:Connection.Thing.ThingTypeName}/${!iot:Connection.Thing.ThingName}/alexa/*/directive/*
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/name/*/update/*
-              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/name/*/get/*
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/name/*/delete/*
           -
             Effect: Allow
@@ -269,13 +267,11 @@ Resources:
             Resource:
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${!iot:Connection.Thing.ThingTypeName}/${!iot:Connection.Thing.ThingName}/alexa/event/*
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/name/*/update
-              - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/name/*/get
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/$aws/things/${!iot:Connection.Thing.ThingName}/shadow/name/*/delete
               - !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:topic/${!iot:Connection.Thing.ThingTypeName}/${!iot:Connection.Thing.ThingName}/alexa/endpoint/*/settings
           -
             Effect: Allow
             Action: 
-              - iot:GetThingShadow
               - iot:UpdateThingShadow
               - iot:DeleteThingShadow
             Resource: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:thing/${!iot:Connection.Thing.ThingName}/*
