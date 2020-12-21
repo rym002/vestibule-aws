@@ -280,7 +280,7 @@ Resources:
           -
             Effect: Allow
             Action: iot:Connect
-            Resource: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:client/${!iot:Connection.Thing.ThingName}/*
+            Resource: !Sub arn:aws:iot:${AWS::Region}:${AWS::AccountId}:client/${!iot:Connection.Thing.ThingName}
   IOTClientConnectedRule:
     Type: AWS::IoT::TopicRule
     Properties:
