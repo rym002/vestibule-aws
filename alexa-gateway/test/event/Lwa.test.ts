@@ -1,6 +1,6 @@
 import { DynamoDB } from 'aws-sdk';
 import * as AWSMock from 'aws-sdk-mock';
-import { assert, expect, use } from 'chai';
+import { expect, use } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import { matches } from 'lodash';
 import 'mocha';
@@ -141,12 +141,13 @@ describe('Lwa', function () {
         })
 
         it('should refresh the token and save to dynamodb', async function () {
+            const sandbox = getContextSandbox(this)
             let dynamoPutItemSpy = mockPutItem(getContextSandbox(this));
             const grantRequest = createRefreshTokenRequest(successResponse.refresh_token)
             mockLwa(grantRequest, 200, successResponse)
             const token = await tokenManager.getToken(vestibuleClientId + 'refresh')
             expect(token).eq(successResponse.access_token);
-            assert(dynamoPutItemSpy.called)
+            sandbox.assert.called(dynamoPutItemSpy)
         })
         it('should fail on missing refresh token', async function () {
             await expect(tokenManager.getToken(vestibuleClientId + 'error')).to.rejected

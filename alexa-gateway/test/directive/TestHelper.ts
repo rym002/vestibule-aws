@@ -2,7 +2,7 @@ import { Alexa, Directive, Event, Message } from '@vestibule-link/alexa-video-sk
 import { EndpointState, endpointTopicPrefix, ErrorHolder, SubType } from "@vestibule-link/iot-types";
 import { IotData } from 'aws-sdk';
 import { expect } from 'chai';
-import { SinonSandbox } from 'sinon';
+import { match, SinonSandbox } from 'sinon';
 import { SHADOW_PREFIX } from '../../src/directive/DirectiveTypes';
 import { handler } from '../../src/directive/handler';
 import { generateValidScope } from "../mock/CognitoMock";
@@ -205,7 +205,7 @@ export async function callHandler(messageContext: DirectiveMessageContext, endpo
             endpoint: endpointId,
             payload: messageContext.request
         }
-    }, new FakeContext(messageId + '-' + messageContext.messageSuffix), fakeCallback);
+    }, new FakeContext(`${messageId}-${messageContext.messageSuffix}`), fakeCallback);
 }
 
 
@@ -245,13 +245,18 @@ export async function testAsyncShadowMessage(sandbox: SinonSandbox, directiveCon
     })
     const ret = await callHandler(directiveContext, '');
     verifySuccessResponse(ret, eventContext, '')
-    expect(shadowSpy.calledWith({
-        thingName: vestibuleClientId,
-        shadowName: localEndpoint,
-        payload: {
+    const expectedPayload = {
+        state: {
             desired: desiredState
-        }
-    }), 'Invalid Desired Shadow')
+        },
+        clientToken: `${messageId}-${directiveContext.messageSuffix}`
+    }
+    const expectedParams = {
+        thingName: `${SHADOW_PREFIX}${vestibuleClientId}`,
+        shadowName: localEndpoint,
+        payload: JSON.stringify(expectedPayload)
+    }
+    sandbox.assert.calledWith(shadowSpy, expectedParams, match.func)
 }
 
 export async function testAsyncShadowNoUpdateMessage(sandbox: SinonSandbox, directiveContext: DirectiveMessageContext, eventContext: EventMessageContext) {
@@ -261,7 +266,7 @@ export async function testAsyncShadowNoUpdateMessage(sandbox: SinonSandbox, dire
     })
     const ret = await callHandler(directiveContext, '');
     verifySuccessResponse(ret, eventContext, '')
-    expect(shadowSpy.notCalled, 'Shadow Update not expected')
+    sandbox.assert.notCalled(shadowSpy)
 }
 export async function testMockErrorResponse(messageContext: DirectiveMessageContext) {
     const ret = await callHandler(messageContext, '');

@@ -1,7 +1,7 @@
 import { Event, EventGateway } from '@vestibule-link/alexa-video-skill-types';
 import { DynamoDB } from 'aws-sdk';
 import * as AWSMock from 'aws-sdk-mock';
-import { assert, expect, use } from 'chai';
+import { expect, use } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import 'mocha';
 import { sendAlexaEvent } from '../../src/event';
@@ -73,7 +73,7 @@ describe('AlexaEvent', function () {
         await expect(sendAlexaEvent(testEvent, vestibuleClientId, 'testToken')).to.rejected
             .and.to.be.eventually.have.property('message', errorResponse.payload.message)
 
-        assert(dynamoBatchWriteSpy.called);
+        sandbox.assert.called(dynamoBatchWriteSpy);
         AWSMock.restore('DynamoDB', 'batchWriteItem');
     })
     it('should throw exception on alexa error', async function () {

@@ -19,7 +19,9 @@ class Handler extends DefaultNotStoppedHandler<DirectiveNamespace> {
         const operation = message.name;
         let desiredState: PlaybackStateReporter.States | undefined = undefined;
         const playbackStates = states[PlaybackStateReporter.namespace];
-        let currentState = playbackStates ? playbackStates.playbackState : undefined
+        let currentState = playbackStates && playbackStates.playbackState
+            ? playbackStates.playbackState.state
+            : undefined
         switch (operation) {
             case 'Pause':
                 desiredState = 'PAUSED';
@@ -34,22 +36,22 @@ class Handler extends DefaultNotStoppedHandler<DirectiveNamespace> {
         if (desiredState == currentState) {
             return {};
         } else {
-            if (desiredState){
+            if (desiredState) {
                 return {
                     sync: false,
-                    desired:{
-                        [PlaybackStateReporter.namespace]:{
-                            playbackState:{
-                                state:desiredState
+                    desired: {
+                        [PlaybackStateReporter.namespace]: {
+                            playbackState: {
+                                state: desiredState
                             }
                         }
                     }
                 }
-            }else{
+            } else {
                 return {
                     request: message,
                     sync: false
-                }    
+                }
             }
         }
     }

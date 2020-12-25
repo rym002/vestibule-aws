@@ -1,6 +1,6 @@
 import { EndpointState, endpointTopicPrefix, ErrorHolder, ResponseMessage, Shadow, SubType } from '@vestibule-link/iot-types';
 import { IotData, SSM } from 'aws-sdk';
-import { assert, expect, use } from 'chai';
+import { expect, use } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import 'mocha';
 import { match } from 'sinon';
@@ -40,6 +40,7 @@ describe('IOT', function () {
                 resetIotDataUpdateThingShadow();
             })
             it('should send an async message', async function () {
+                const sandbox = getContextSandbox(this)
                 const updateShadowSpy = mockIotDataUpdateThingShadow(getContextSandbox(this), (params: IotData.UpdateThingShadowRequest): IotData.UpdateThingShadowResponse => {
                     return {
                     }
@@ -55,10 +56,12 @@ describe('IOT', function () {
                 const shadow: Shadow<EndpointState> = {
                     state: {
                         desired: desiredState
-                    }
+                    },
+                    clientToken: messageId
                 }
-                assert(updateShadowSpy.calledWith(match.has('thingName', vestibuleClientId)));
-                assert(updateShadowSpy.calledWith(match.has('payload', JSON.stringify(shadow))));
+                sandbox.assert.calledWith(updateShadowSpy, match.has('thingName', vestibuleClientId), match.func);
+                sandbox.assert.calledWith(updateShadowSpy, match.has('shadowName', localEndpoint), match.func);
+                sandbox.assert.calledWith(updateShadowSpy, match.has('payload', JSON.stringify(shadow)), match.func);
                 expect(resp).to.have.property('shadow').eql(shadow);
             })
             context('Sync Messages', function () {
@@ -128,14 +131,15 @@ describe('IOT', function () {
                 resetIotDataGetThingShadow();
             })
             it('should return the thing shadow', async function () {
+                const sandbox = getContextSandbox(this)
                 const shadows = new Map<string, Shadow<any>>()
                 shadows.set(localEndpoint, testResp)
                 const shadowSpy = mockShadow(getContextSandbox(this), shadows, vestibuleClientId)
                 const resp = await getShadow(`${SHADOW_PREFIX}${vestibuleClientId}`, localEndpoint);
-                assert(shadowSpy.calledWith({
+                sandbox.assert.calledWith(shadowSpy, {
                     thingName: `${SHADOW_PREFIX}${vestibuleClientId}`,
                     shadowName: localEndpoint
-                }), 'Get Shadow Not Called')
+                }, match.func)
                 expect(resp).eql(testResp);
             })
 
@@ -175,6 +179,7 @@ describe('IOT', function () {
             resetIotDataPublish()
         })
         it('should send an async message', async function () {
+            const sandbox = getContextSandbox(this)
             const publishSpy = mockIotDataPublish(getContextSandbox(this), (params: IotData.PublishRequest) => {
                 return {}
             })
@@ -188,12 +193,11 @@ describe('IOT', function () {
                 localEndpoint
             )
             const topicPrefix = endpointTopicPrefix(vestibuleClientId, 'alexa', localEndpoint)
-            assert(publishSpy.calledWith(match.has('topic', `${topicPrefix}directive/Alexa.PlaybackController/Play`)),
-                'Invalid Topic Name');
-            assert(publishSpy.calledWith(match.has('payload', JSON.stringify({
+            sandbox.assert.calledWith(publishSpy, match.has('topic', `${topicPrefix}directive/Alexa.PlaybackController/Play`), match.func);
+            sandbox.assert.calledWith(publishSpy, match.has('payload', JSON.stringify({
                 payload: payload.payload,
                 replyTopic: {}
-            }))), 'Invalid payload published on topic');
+            })), match.func);
         })
         context('Sync', async function () {
             beforeEach(function () {

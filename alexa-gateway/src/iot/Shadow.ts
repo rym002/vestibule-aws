@@ -12,11 +12,12 @@ class AsyncHandler implements ShadowHandler {
         protected readonly messageId: string,
         protected readonly endpointId: string) {
     }
-    private createShadow(desired: EndpointState) {
+    private createShadow(desired: EndpointState): Shadow<EndpointState> {
         return {
             state: {
                 desired: desired
-            }
+            },
+            clientToken: this.messageId
         }
     }
     protected logEndMessage() {
@@ -37,6 +38,7 @@ class AsyncHandler implements ShadowHandler {
             const iotData = await getIotData();
             const update = await iotData.updateThingShadow({
                 thingName: this.clientId,
+                shadowName: this.endpointId,
                 payload: JSON.stringify(shadowUpdate)
             }).promise();
         } catch (err) {
