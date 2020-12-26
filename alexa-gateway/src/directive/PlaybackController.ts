@@ -8,6 +8,14 @@ type DirectiveNamespace = PlaybackController.NamespaceType;
 const namespace: DirectiveNamespace = PlaybackController.namespace;
 
 class Handler extends DefaultNotStoppedHandler<DirectiveNamespace> {
+    private readonly operationMap = new Map<PlaybackController.Operations, PlaybackStateReporter.States>();
+    constructor() {
+        super()
+        this.operationMap
+            .set('Pause', 'PAUSED')
+            .set('Play', 'PLAYING')
+            .set('Stop', 'STOPPED')
+    }
     createResponse = createAlexaResponse;
     getCapability(capabilities: NonNullable<SubType<EndpointRecord, DirectiveNamespace>>): SubType<Discovery.NamedCapabilities, DirectiveNamespace> {
         return {
@@ -17,22 +25,12 @@ class Handler extends DefaultNotStoppedHandler<DirectiveNamespace> {
     }
     getEndpointMessageFlags(message: SubType<DirectiveMessage, DirectiveNamespace>, states: EndpointState): MessageHandlingFlags {
         const operation = message.name;
-        let desiredState: PlaybackStateReporter.States | undefined = undefined;
         const playbackStates = states[PlaybackStateReporter.namespace];
         let currentState = playbackStates && playbackStates.playbackState
             ? playbackStates.playbackState.state
             : undefined
-        switch (operation) {
-            case 'Pause':
-                desiredState = 'PAUSED';
-                break;
-            case 'Play':
-                desiredState = 'PLAYING';
-                break;
-            case 'Stop':
-                desiredState = 'STOPPED';
-                break;
-        }
+        const desiredState = this.operationMap.get(operation)
+
         if (desiredState == currentState) {
             return {};
         } else {

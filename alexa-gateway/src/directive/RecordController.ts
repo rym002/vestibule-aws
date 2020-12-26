@@ -8,6 +8,13 @@ type DirectiveNamespace = RecordController.NamespaceType;
 const namespace: DirectiveNamespace = RecordController.namespace;
 
 class Handler extends DefaultNotStoppedHandler<DirectiveNamespace> implements ContextPropertyReporter<DirectiveNamespace>{
+    private readonly operationMap = new Map<RecordController.Operations, RecordController.States>()
+    constructor() {
+        super()
+        this.operationMap
+            .set('StartRecording', 'RECORDING')
+            .set('StopRecording', 'NOT_RECORDING')
+    }
     createResponse = createAlexaResponse;
     convertToProperty<K extends keyof Alexa.NamedContext[DirectiveNamespace],
         SK extends keyof NonNullable<EndpointState[DirectiveNamespace]>,
@@ -39,16 +46,7 @@ class Handler extends DefaultNotStoppedHandler<DirectiveNamespace> implements Co
         const operation = message.name;
         const recordingStates = states[namespace];
         const currentState: RecordController.States | undefined = recordingStates ? recordingStates.RecordingState : undefined
-        let desiredState: RecordController.States | undefined;
-
-        switch (operation) {
-            case 'StartRecording':
-                desiredState = 'RECORDING';
-                break;
-            case 'StopRecording':
-                desiredState = 'NOT_RECORDING';
-                break;
-        }
+        const desiredState = this.operationMap.get(operation);
 
         if (desiredState == currentState) {
             return {}
