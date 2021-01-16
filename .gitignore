@@ -6,3 +6,4 @@ deploy
 .aws-sam
 packaged.yml
 artifacts.zip
+package-lock.json
