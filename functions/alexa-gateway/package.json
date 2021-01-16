@@ -1,0 +1,44 @@
+{
+  "name": "alexa-gateway",
+  "version": "1.0.0",
+  "description": "Vestible lambda gateway for Alexa",
+  "main": "dist/index.js",
+  "scripts": {
+    "clean": "rimraf dist && rimraf deploy",
+    "build": "tsc",
+    "pretest": "npm run clean",
+    "test": "mocha -r ts-node/register"
+  },
+  "keywords": [],
+  "author": "Ray Munian",
+  "license": "ISC",
+  "repository": {
+    "url": "https://github.com/rym002/vestibule-aws",
+    "type": "git"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.69",
+    "@types/chai": "^4.2.14",
+    "@types/chai-as-promised": "^7.1.3",
+    "@types/lodash": "^4.14.167",
+    "@types/mocha": "^8.2.0",
+    "@types/nock": "^10.0.3",
+    "@types/sinon": "^9.0.10",
+    "aws-sdk": "^2.821.0",
+    "aws-sdk-mock": "^5.1.0",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "mocha": "^8.2.1",
+    "nock": "^10.0.6",
+    "rimraf": "^2.7.1",
+    "sinon": "^9.2.2",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.7",
+    "vestibule-alexa-layer": "file:../../layers/alexa/layer-dist/dist/vestibule-alexa-layer-1.0.2.tgz",
+    "vestibule-common-layer": "file:../../layers/common/layer-dist/dist/vestibule-common-layer-1.0.0.tgz"
+  },
+  "dependencies": {
+    "@vestibule-link/iot-types": "^3.1.1",
+    "aws-iot-device-sdk-v2": "^1.3.5"
+  }
+}

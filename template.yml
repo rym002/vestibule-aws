@@ -24,13 +24,16 @@ Resources:
   AlexaGateway:
     Type: 'AWS::Serverless::Function'
     Properties:
-      CodeUri: alexa-gateway/
-      Handler: dist/directive/handler.handler
+      CodeUri: functions/alexa-gateway/
+      Handler: dist/index.handler
       Runtime: nodejs12.x
       FunctionName: !Sub ${AWS::StackName}-AlexaGateway
       Description: 'Vestibule Alexa Gateway'
       Timeout: 50
       Role: !GetAtt AlexaGatewayRole.Arn
+      Layers:
+        - !GetAtt CommonLayer
+        - !GetAtt AlexaLayer
       Environment:
         Variables:
           refresh_token_table: !Select [1, !Split [ "/", !GetAtt RefreshTokensTable.Arn]]
@@ -39,18 +42,41 @@ Resources:
   AlexaChangeReportEvent:
     Type: 'AWS::Serverless::Function'
     Properties:
-      CodeUri: alexa-gateway/
-      Handler: dist/event/handler.handler
+      CodeUri: functions/alexa-change-report/
+      Handler: dist/index.handler
       Runtime: nodejs12.x
       FunctionName: !Sub ${AWS::StackName}-AlexaChangeReportEvent
       Description: 'Vestibule Alexa Event Gateway'
       Timeout: 50
       Role: !GetAtt AlexaChangeEventRole.Arn
+      Layers:
+        - !GetAtt CommonLayer
+        - !GetAtt AlexaLayer
       Environment:
         Variables:
           refresh_token_table: !Select [1, !Split [ "/", !GetAtt RefreshTokensTable.Arn]]
           auth_token_table: !Select [1, !Split [ "/", !GetAtt AuthTokensTable.Arn]]
           endpoint_table: !Select [1, !Split [ "/", !GetAtt EndpointTable.Arn]]
+  CommonLayer:
+    Type: 'AWS::Serverless::LayerVersion'
+    Properties:
+      ContentUri: layers/common/layer-dist
+      CompatibleRuntimes:
+        - nodejs12.x
+      Description: Common Code across vestibule functions
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: nodejs12.x
+  AlexaLayer:
+    Type: 'AWS::Serverless::LayerVersion'
+    Properties:
+      ContentUri: layers/alexa/layer-dist
+      CompatibleRuntimes:
+        - nodejs12.x
+      Description: Common Code across alexa functions
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: nodejs12.x
   AlexaGatewayInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:

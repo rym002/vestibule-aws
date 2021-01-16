@@ -1,0 +1,13 @@
+{
+    "name": "vestibule-layers",
+    "description": "Build lambda layers",
+    "version": "1.0.0",
+    "scripts": {
+        "clean:common":"cd ./common && npm run clean",
+        "common":"cd ./common && npm install-test && npm pack",
+        "clean:alexa":"cd ./alexa && npm run clean",
+        "alexa":"cd ./alexa && npm install-test && npm pack",
+        "build":"npm run common && npm run alexa",
+        "clean":"npm run clean:common && npm run clean:alexa"
+    }
+}

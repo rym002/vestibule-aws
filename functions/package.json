@@ -1,0 +1,17 @@
+{
+    "name": "vestibule-functions",
+    "description": "Build lambda functions",
+    "version": "1.0.0",
+    "scripts": {
+        "test:alexa-gateway": "cd ./alexa-gateway && npm install-test",
+        "build:alexa-gateway": "cd ./alexa-gateway && npm run build",
+        "clean:alexa-gateway": "cd ./alexa-gateway && npm run clean",
+        "test:alexa-change-report": "cd ./alexa-change-report && npm install-test",
+        "build:alexa-change-report": "cd ./alexa-change-report && npm run build",
+        "clean:alexa-change-report": "cd ./alexa-change-report && npm run clean",
+        "build:all": "npm run build:alexa-gateway && npm run build:alexa-change-report",
+        "test:all": "npm run test:alexa-gateway && npm run test:alexa-change-report",
+        "build": "npm run test:all && npm run build:all",
+        "clean": "npm run clean:alexa-gateway && npm run clean:alexa-change-report"
+    }
+}

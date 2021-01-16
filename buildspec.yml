@@ -5,20 +5,13 @@ phases:
       nodejs: 12
   pre_build:
     commands:
-      - pip install --user aws-sam-cli --no-warn-script-location
-      - USER_BASE_PATH=$(python -m site --user-base)
-      - export PATH=$PATH:$USER_BASE_PATH/bin
-      - cd alexa-gateway
-      - npm install
-      - cd ..
+      - npm config set unsafe-perm true
   build:
     commands:
-      - cd alexa-gateway
       - npm run build
-      - AWS_ACCESS_KEY_ID=testKey AWS_SECRET_ACCESS_KEY=testSecretKey npm run test
-      - cd ..
-      - sam build
       - sam package --s3-bucket $S3BUCKET --s3-prefix $S3PREFIX --output-template-file packaged.yml
+  post_build:
+    commands:
 artifacts:
   type: zip
   files:
