@@ -412,7 +412,7 @@ Resources:
             Effect: Allow
             Action: dynamodb:PutItem
             Resource:
-              - !Ref EndpointTable
+              - !GetAtt EndpointTable.Arn
   AlexaGatewayLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
