@@ -61,6 +61,7 @@ Resources:
     Type: 'AWS::Serverless::LayerVersion'
     Properties:
       ContentUri: layers/common/layer-dist
+      LayerName: !Sub ${AWS::StackName}-CommonLayer
       CompatibleRuntimes:
         - nodejs12.x
       Description: Common Code across vestibule functions
@@ -71,6 +72,7 @@ Resources:
     Type: 'AWS::Serverless::LayerVersion'
     Properties:
       ContentUri: layers/alexa/layer-dist
+      LayerName: !Sub ${AWS::StackName}-AlexaLayer
       CompatibleRuntimes:
         - nodejs12.x
       Description: Common Code across alexa functions
@@ -87,9 +89,9 @@ Resources:
   AlexaChangeReportEventInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !Ref AlexaChangeReportEvent
+      FunctionName: !GetAtt AlexaChangeReportEvent.Arn
       Action: lambda:InvokeFunction
-      SourceArn: !Ref IOTEventChangeReportRule
+      SourceArn: !GetAtt IOTEventChangeReportRule.Arn
       Principal: iot.amazonaws.com
   AuthTokensTable:
     Type: 'AWS::DynamoDB::Table'
