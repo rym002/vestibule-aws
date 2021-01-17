@@ -194,7 +194,7 @@ Resources:
             Action:
               - dynamodb:Query
             Resource:
-              - !Ref EndpointTable
+              - !GetAtt EndpointTable.Arn
           -
             Effect: Allow
             Action:
@@ -247,16 +247,16 @@ Resources:
               - dynamodb:BatchGetItem
               - dynamodb:GetItem
             Resource:
-              - !Ref AuthTokensTable
-              - !Ref RefreshTokensTable
+              - !GetAtt AuthTokensTable.Arn
+              - !GetAtt RefreshTokensTable.Arn
           -
             Effect: Allow
             Action:
               - dynamodb:BatchWriteItem
             Resource:
-              - !Ref EndpointTable
-              - !Ref AuthTokensTable
-              - !Ref RefreshTokensTable
+              - !GetAtt EndpointTable.Arn
+              - !GetAtt AuthTokensTable.Arn
+              - !GetAtt RefreshTokensTable.Arn
           -
             Effect: Allow
             Action: 
@@ -316,7 +316,7 @@ Resources:
         Actions:
           -
             Republish:
-              RoleArn: !Ref VestibuleIotRuleRole
+              RoleArn: !GetAtt VestibuleIotRuleRole.Arn
               Topic: $$aws/things/${clientId}/shadow/name/bridge/update
         Description: Update thing shadow connected value
         RuleDisabled: false
@@ -349,7 +349,7 @@ Resources:
         Actions:
           -
             DynamoDBv2:
-              RoleArn: !Ref VestibuleIotRuleRole
+              RoleArn: !GetAtt VestibuleIotRuleRole.Arn
               PutItem: 
                 TableName: !Select [1, !Split [ "/", !GetAtt EndpointTable.Arn]]
         Description: Update DynamoDB table with endpoint capabilities and info
@@ -399,7 +399,7 @@ Resources:
     Type: AWS::IAM::Policy
     Properties:
       Roles:
-        - !Ref VestibuleIotRuleRole
+        - !GetAtt VestibuleIotRuleRole.Arn
       PolicyName: !Sub ${AWS::StackName}-IotRulePolicy
       PolicyDocument:
         Version: 2012-10-17
