@@ -82,7 +82,7 @@ Resources:
   AlexaGatewayInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !Ref AlexaGateway
+      FunctionName: !GetAtt AlexaGateway.Arn
       Action: lambda:InvokeFunction
       EventSourceToken: !Ref VideoSkillId
       Principal: alexa-connectedhome.amazon.com
@@ -373,7 +373,7 @@ Resources:
         Actions:
           -
             Lambda:
-              FunctionArn: !Ref AlexaChangeReportEvent
+              FunctionArn: !GetAtt AlexaChangeReportEvent.Arn
         AwsIotSqlVersion: 2016-03-23
         Sql: >-
           SELECT {
