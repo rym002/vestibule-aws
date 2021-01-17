@@ -399,7 +399,7 @@ Resources:
     Type: AWS::IAM::Policy
     Properties:
       Roles:
-        - !GetAtt VestibuleIotRuleRole.Arn
+        - !Ref VestibuleIotRuleRole
       PolicyName: !Sub ${AWS::StackName}-IotRulePolicy
       PolicyDocument:
         Version: 2012-10-17
