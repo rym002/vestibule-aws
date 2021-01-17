@@ -30,7 +30,7 @@ Resources:
       FunctionName: !Sub ${AWS::StackName}-AlexaGateway
       Description: 'Vestibule Alexa Gateway'
       Timeout: 50
-      Role: !Ref AlexaGatewayRole
+      Role: !GetAtt AlexaGatewayRole.Arn
       Layers:
         - !Ref CommonLayer
         - !Ref AlexaLayer
@@ -48,7 +48,7 @@ Resources:
       FunctionName: !Sub ${AWS::StackName}-AlexaChangeReportEvent
       Description: 'Vestibule Alexa Event Gateway'
       Timeout: 50
-      Role: !Ref AlexaChangeEventRole
+      Role: !GetAtt AlexaChangeEventRole.Arn
       Layers:
         - !Ref CommonLayer
         - !Ref AlexaLayer
