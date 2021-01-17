@@ -9,9 +9,9 @@ phases:
   build:
     commands:
       - npm run build
-      - sam package --s3-bucket $S3BUCKET --s3-prefix $S3PREFIX --output-template-file packaged.yml
   post_build:
     commands:
+      - sam package --s3-bucket $S3BUCKET --s3-prefix $S3PREFIX --output-template-file packaged.yml
 artifacts:
   type: zip
   files:

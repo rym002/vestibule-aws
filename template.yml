@@ -30,10 +30,10 @@ Resources:
       FunctionName: !Sub ${AWS::StackName}-AlexaGateway
       Description: 'Vestibule Alexa Gateway'
       Timeout: 50
-      Role: !GetAtt AlexaGatewayRole.Arn
+      Role: !Ref AlexaGatewayRole
       Layers:
-        - !GetAtt CommonLayer
-        - !GetAtt AlexaLayer
+        - !Ref CommonLayer
+        - !Ref AlexaLayer
       Environment:
         Variables:
           refresh_token_table: !Select [1, !Split [ "/", !GetAtt RefreshTokensTable.Arn]]
@@ -48,10 +48,10 @@ Resources:
       FunctionName: !Sub ${AWS::StackName}-AlexaChangeReportEvent
       Description: 'Vestibule Alexa Event Gateway'
       Timeout: 50
-      Role: !GetAtt AlexaChangeEventRole.Arn
+      Role: !Ref AlexaChangeEventRole
       Layers:
-        - !GetAtt CommonLayer
-        - !GetAtt AlexaLayer
+        - !Ref CommonLayer
+        - !Ref AlexaLayer
       Environment:
         Variables:
           refresh_token_table: !Select [1, !Split [ "/", !GetAtt RefreshTokensTable.Arn]]
@@ -80,16 +80,16 @@ Resources:
   AlexaGatewayInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !GetAtt AlexaGateway.Arn
+      FunctionName: !Ref AlexaGateway
       Action: lambda:InvokeFunction
       EventSourceToken: !Ref VideoSkillId
       Principal: alexa-connectedhome.amazon.com
   AlexaChangeReportEventInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !GetAtt AlexaChangeReportEvent.Arn
+      FunctionName: !Ref AlexaChangeReportEvent
       Action: lambda:InvokeFunction
-      SourceArn: !GetAtt IOTEventChangeReportRule.Arn
+      SourceArn: !Ref IOTEventChangeReportRule
       Principal: iot.amazonaws.com
   AuthTokensTable:
     Type: 'AWS::DynamoDB::Table'
@@ -194,7 +194,7 @@ Resources:
             Action:
               - dynamodb:Query
             Resource:
-              - !GetAtt EndpointTable.Arn
+              - !Ref EndpointTable
           -
             Effect: Allow
             Action:
@@ -247,16 +247,16 @@ Resources:
               - dynamodb:BatchGetItem
               - dynamodb:GetItem
             Resource:
-              - !GetAtt AuthTokensTable.Arn
-              - !GetAtt RefreshTokensTable.Arn
+              - !Ref AuthTokensTable
+              - !Ref RefreshTokensTable
           -
             Effect: Allow
             Action:
               - dynamodb:BatchWriteItem
             Resource:
-              - !GetAtt EndpointTable.Arn
-              - !GetAtt AuthTokensTable.Arn
-              - !GetAtt RefreshTokensTable.Arn
+              - !Ref EndpointTable
+              - !Ref AuthTokensTable
+              - !Ref RefreshTokensTable
           -
             Effect: Allow
             Action: 
@@ -316,7 +316,7 @@ Resources:
         Actions:
           -
             Republish:
-              RoleArn: !GetAtt VestibuleIotRuleRole.Arn
+              RoleArn: !Ref VestibuleIotRuleRole
               Topic: $$aws/things/${clientId}/shadow/name/bridge/update
         Description: Update thing shadow connected value
         RuleDisabled: false
@@ -349,7 +349,7 @@ Resources:
         Actions:
           -
             DynamoDBv2:
-              RoleArn: !GetAtt VestibuleIotRuleRole.Arn
+              RoleArn: !Ref VestibuleIotRuleRole
               PutItem: 
                 TableName: !Select [1, !Split [ "/", !GetAtt EndpointTable.Arn]]
         Description: Update DynamoDB table with endpoint capabilities and info
@@ -371,7 +371,7 @@ Resources:
         Actions:
           -
             Lambda:
-              FunctionArn: !GetAtt AlexaChangeReportEvent.Arn
+              FunctionArn: !Ref AlexaChangeReportEvent
         AwsIotSqlVersion: 2016-03-23
         Sql: >-
           SELECT {
@@ -412,7 +412,7 @@ Resources:
             Effect: Allow
             Action: dynamodb:PutItem
             Resource:
-              - !GetAtt EndpointTable.Arn
+              - !Ref EndpointTable
   AlexaGatewayLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
