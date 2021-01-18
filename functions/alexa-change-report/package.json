@@ -7,7 +7,7 @@
     "clean": "rimraf dist && rimraf deploy",
     "build": "tsc",
     "pretest": "npm run clean",
-    "test": "mocha -r ts-node/register --extension ts --recursive --exit"
+    "test": "mocha"
   },
   "keywords": [],
   "author": "Ray Munian",

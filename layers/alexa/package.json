@@ -12,7 +12,7 @@
     "prepack": "npm run build",
     "pretest": "npm run clean",
     "postpack": "mkdirp $npm_package_config_layer && move-file $npm_package_name-$npm_package_version.tgz $npm_package_config_layer/$npm_package_name-$npm_package_version.tgz",
-    "test": "mocha -r ts-node/register"
+    "test": "mocha"
   },
   "keywords": [],
   "author": "Ray Munian",
