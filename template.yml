@@ -448,7 +448,6 @@ Resources:
       RetentionInDays: 7
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
-    Properties: 
   AlexaUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
