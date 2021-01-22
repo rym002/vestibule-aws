@@ -461,8 +461,6 @@ Resources:
     Properties:
       UserPoolId: !Ref CognitoUserPool
       Domain: !Ref AuthDomainName
-      CustomDomainConfig:
-        CertificateArn: !Ref todo
   LWAIdentityProvider:
     Type: AWS::Cognito::UserPoolIdentityProvider
     Properties:
