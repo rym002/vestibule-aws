@@ -16,10 +16,25 @@ Parameters:
   VideoSkillId:
     Description: Alexa Video Skill Id
     Type: AWS::SSM::Parameter::Value<String>
+  AuthDomainName:
+    Description: Domain name for authorization
+    Type: AWS::SSM::Parameter::Value<String>
+  LWAClientId:
+    Description: Client Id for LWA
+    Type: AWS::SSM::Parameter::Value<String>
+  LWAClientSecret:
+    Description: Client secret for LWA
+    Type: AWS::SSM::Parameter::Value<String>
 Outputs:
   AlexaGatewayId:
     Description: ID of the AlexaGateway
     Value: !GetAtt AlexaGateway.Arn
+  AlexaCognitoClientId:
+    Description: Cognito Client ID
+    Value: !Ref AlexaUserPoolClient
+  AlexaCognitoUserPool:
+    Description: Cognito User Pool ID
+    Value: !GetAtt CognitoUserPool.ProviderURL
 Resources:
   AlexaGateway:
     Type: 'AWS::Serverless::Function'
@@ -431,3 +446,32 @@ Resources:
         - /aws/lambda/${FunctionName}
         - { FunctionName: !Select [6, !Split [ ":", !GetAtt AlexaChangeReportEvent.Arn]] }
       RetentionInDays: 7
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties: 
+  AlexaUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref CognitoUserPool
+      GenerateSecret: true
+      SupportedIdentityProviders:
+        - LoginWithAmazon
+      ClientName: alexa_vestibule
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      UserPoolId: !Ref CognitoUserPool
+      Domain: !Ref AuthDomainName
+      CustomDomainConfig:
+        CertificateArn: !Ref todo
+  LWAIdentityProvider:
+    Type: AWS::Cognito::UserPoolIdentityProvider
+    Properties:
+      UserPoolId: !Ref CognitoUserPool
+      ProviderName: !Sub ${AWS::StackName}-LWA
+      ProviderType: LoginWithAmazon
+      ProviderDetails:
+        client_id: !Ref LWAClientId
+        client_secret: !Ref LWAClientSecret
+        authorize_scopes: profile:user_id
+
