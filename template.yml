@@ -448,27 +448,4 @@ Resources:
       RetentionInDays: 7
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
-  AlexaUserPoolClient:
-    Type: AWS::Cognito::UserPoolClient
-    Properties:
-      UserPoolId: !Ref CognitoUserPool
-      GenerateSecret: true
-      SupportedIdentityProviders:
-        - !Ref   LWAIdentityProvider
-      ClientName: alexa_vestibule
-  UserPoolDomain:
-    Type: AWS::Cognito::UserPoolDomain
-    Properties:
-      UserPoolId: !Ref CognitoUserPool
-      Domain: !Ref AuthDomainName
-  LWAIdentityProvider:
-    Type: AWS::Cognito::UserPoolIdentityProvider
-    Properties:
-      UserPoolId: !Ref CognitoUserPool
-      ProviderName: !Sub ${AWS::StackName}-LWA
-      ProviderType: LoginWithAmazon
-      ProviderDetails:
-        client_id: !Ref LWAClientId
-        client_secret: !Ref LWAClientSecret
-        authorize_scopes: profile:user_id
 
