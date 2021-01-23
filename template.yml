@@ -19,6 +19,9 @@ Parameters:
   AuthDomainName:
     Description: Domain name for authorization
     Type: AWS::SSM::Parameter::Value<String>
+  HostedZoneId:
+    Description: Hosted Zone Id for the Authorization Domain
+    Type: AWS::SSM::Parameter::Value<String>
   LWAClientId:
     Description: Client Id for LWA
     Type: AWS::SSM::Parameter::Value<String>
@@ -454,3 +457,16 @@ Resources:
       UserPoolId: !Ref CognitoUserPool
       GenerateSecret: true
       ClientName: alexa_vestibule
+  AuthCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref AuthDomainName
+      DomainValidationOptions:
+        HostedZoneId: !Ref HostedZoneId
+  UserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      UserPoolId: !Ref CognitoUserPool
+      Domain: !Ref AuthDomainName
+      CustomDomainConfig:
+        CertificateArn: !Ref AuthCertificate
