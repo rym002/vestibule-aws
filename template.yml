@@ -19,9 +19,9 @@ Parameters:
   AuthDomainName:
     Description: Domain name for authorization
     Type: AWS::SSM::Parameter::Value<String>
-  ValidationDomainName:
-    Description: Domain name for certificate
-    Type: AWS::SSM::Parameter::Value<String>
+  CallbackUrls:
+    Description: ALexa Callback Urls
+    Type: AWS::SSM::Parameter::Value<List<String>>
   HostedZoneId:
     Description: Hosted Zone Id for the Authorization Domain
     Type: AWS::SSM::Parameter::Value<String>
@@ -460,6 +460,7 @@ Resources:
       UserPoolId: !Ref CognitoUserPool
       GenerateSecret: true
       ClientName: alexa_vestibule
+      CallbackURLs: !Ref CallbackUrls
   AuthCertificate:
     Type: AWS::CertificateManager::Certificate
     Properties:
