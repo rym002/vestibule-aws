@@ -454,6 +454,8 @@ Resources:
       RetentionInDays: 7
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub ${AWS::StackName}-UserPool
   AlexaUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
@@ -461,6 +463,12 @@ Resources:
       GenerateSecret: true
       ClientName: alexa_vestibule
       CallbackURLs: !Ref CallbackUrls
+      SupportedIdentityProviders:
+        - !Ref LWAIdentityProvider
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - openid
   AuthCertificate:
     Type: AWS::CertificateManager::Certificate
     Properties:
