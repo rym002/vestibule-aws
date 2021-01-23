@@ -466,7 +466,8 @@ Resources:
       DomainName: !Ref AuthDomainName
       DomainValidationOptions:
         - HostedZoneId: !Ref HostedZoneId
-          DomainName: !Ref ValidationDomainName
+          DomainName: !Ref AuthDomainName
+      ValidationMethod: DNS
   UserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
     Properties:
