@@ -480,7 +480,7 @@ Resources:
     Type: AWS::Cognito::UserPoolIdentityProvider
     Properties:
       UserPoolId: !Ref CognitoUserPool
-      ProviderName: LWA
+      ProviderName: LoginWithAmazon
       ProviderType: LoginWithAmazon
       ProviderDetails:
         client_id: !Ref LWAClientId
