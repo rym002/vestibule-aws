@@ -29,6 +29,9 @@ Outputs:
   AlexaGatewayId:
     Description: ID of the AlexaGateway
     Value: !GetAtt AlexaGateway.Arn
+  AlexaCognitoClientId:
+    Description: Cognito Client ID
+    Value: !Ref AlexaUserPoolClient
   AlexaCognitoUserPool:
     Description: Cognito User Pool ID
     Value: !GetAtt CognitoUserPool.ProviderURL
@@ -445,4 +448,9 @@ Resources:
       RetentionInDays: 7
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
-
+  AlexaUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref CognitoUserPool
+      GenerateSecret: true
+      ClientName: alexa_vestibule
