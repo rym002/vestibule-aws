@@ -476,3 +476,13 @@ Resources:
       Domain: !Ref AuthDomainName
       CustomDomainConfig:
         CertificateArn: !Ref AuthCertificate
+  LWAIdentityProvider:
+    Type: AWS::Cognito::UserPoolIdentityProvider
+    Properties:
+      UserPoolId: !Ref CognitoUserPool
+      ProviderName: LWA
+      ProviderType: LoginWithAmazon
+      ProviderDetails:
+        client_id: !Ref LWAClientId
+        client_secret: !Ref LWAClientSecret
+        authorize_scopes: profile:user_id
