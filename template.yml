@@ -462,7 +462,7 @@ Resources:
     Properties:
       DomainName: !Ref AuthDomainName
       DomainValidationOptions:
-        HostedZoneId: !Ref HostedZoneId
+        - HostedZoneId: !Ref HostedZoneId
   UserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
     Properties:
