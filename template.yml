@@ -19,6 +19,9 @@ Parameters:
   AuthDomainName:
     Description: Domain name for authorization
     Type: AWS::SSM::Parameter::Value<String>
+  ValidationDomainName:
+    Description: Domain name for certificate
+    Type: AWS::SSM::Parameter::Value<String>
   HostedZoneId:
     Description: Hosted Zone Id for the Authorization Domain
     Type: AWS::SSM::Parameter::Value<String>
@@ -463,6 +466,7 @@ Resources:
       DomainName: !Ref AuthDomainName
       DomainValidationOptions:
         - HostedZoneId: !Ref HostedZoneId
+          DomainName: !Ref ValidationDomainName
   UserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
     Properties:
