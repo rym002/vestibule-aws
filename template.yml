@@ -35,12 +35,6 @@ Outputs:
   AlexaGatewayId:
     Description: ID of the AlexaGateway
     Value: !GetAtt AlexaGateway.Arn
-  AlexaCognitoClientId:
-    Description: Cognito Client ID
-    Value: !Ref AlexaUserPoolClient
-  AlexaCognitoUserPool:
-    Description: Cognito User Pool ID
-    Value: !GetAtt CognitoUserPool.ProviderURL
 Resources:
   AlexaGateway:
     Type: 'AWS::Serverless::Function'
@@ -60,6 +54,8 @@ Resources:
           refresh_token_table: !Select [1, !Split [ "/", !GetAtt RefreshTokensTable.Arn]]
           auth_token_table: !Select [1, !Split [ "/", !GetAtt AuthTokensTable.Arn]]
           endpoint_table: !Select [1, !Split [ "/", !GetAtt EndpointTable.Arn]]
+          cognito_url: !GetAtt CognitoUserPool.ProviderURL
+          cognito_client_ids: !Ref AlexaUserPoolClient
   AlexaChangeReportEvent:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -78,6 +74,8 @@ Resources:
           refresh_token_table: !Select [1, !Split [ "/", !GetAtt RefreshTokensTable.Arn]]
           auth_token_table: !Select [1, !Split [ "/", !GetAtt AuthTokensTable.Arn]]
           endpoint_table: !Select [1, !Split [ "/", !GetAtt EndpointTable.Arn]]
+          cognito_url: !GetAtt CognitoUserPool.ProviderURL
+          cognito_client_ids: !Ref AlexaUserPoolClient
   CommonLayer:
     Type: 'AWS::Serverless::LayerVersion'
     Properties:

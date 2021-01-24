@@ -1,9 +1,7 @@
 import { expect, use } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import 'mocha';
-import { authenticationProps, generateToken, generateValidToken, getCognitoTestParameters, getSharedKey, setupCognitoMock } from '../../../mocks/CognitoMock';
-import { getContextSandbox } from '../../../mocks/Sandbox';
-import { ssmMock } from '../../../mocks/SSMMocks';
+import { authenticationProps, generateToken, generateValidToken, getSharedKey, setupCognitoMock } from '../../../mocks/CognitoMock';
 import { getUserSub } from '../src/authentication';
 
 use(chaiAsPromised);
@@ -11,8 +9,6 @@ use(chaiAsPromised);
 const clientId = 'testClient'
 describe('Authentication', function () {
     beforeEach(async function () {
-        const sandbox = getContextSandbox(this)
-        ssmMock(sandbox, [getCognitoTestParameters]);
         await setupCognitoMock();
     })
     it('should return the sub for a valid token', async function () {
@@ -22,21 +18,21 @@ describe('Authentication', function () {
 
     it('should fail for an expired token', async function () {
         const key = await getSharedKey();
-        const token = await generateToken(key, clientId, authenticationProps.testClientIds[0],
-            new Date(Date.now() - 5000), authenticationProps.testPoolId, authenticationProps.testRegionId);
+        const token = await generateToken(key, clientId, authenticationProps.cognito_client_ids,
+            new Date(Date.now() - 5000), authenticationProps.cognito_url);
         await authErrorTest(token, 'Token Is Expired')
     })
     it('should fail for invalid client id', async function () {
         const key = await getSharedKey();
         const token = await generateToken(key, clientId, 'badClientId',
-            new Date(Date.now() + 5000), authenticationProps.testPoolId, authenticationProps.testRegionId);
+            new Date(Date.now() + 5000), authenticationProps.cognito_url);
         await authErrorTest(token, 'Token was not issued for this audience')
     })
-    it('should fail for invalid pool id', async function () {
+    it('should fail for invalid iss', async function () {
         const key = await getSharedKey();
-        const token = await generateToken(key, clientId, authenticationProps.testClientIds[0],
-            new Date(Date.now() + 5000), 'badPoolId', authenticationProps.testRegionId);
-        await authErrorTest(token, 'Invalid Pool Id')
+        const token = await generateToken(key, clientId, authenticationProps.cognito_client_ids,
+            new Date(Date.now() + 5000),  authenticationProps.cognito_url + 'badPoolId');
+        await authErrorTest(token, 'Token was not issued by a trusted issuer')
     })
 })
 

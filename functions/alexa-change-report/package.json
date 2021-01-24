@@ -35,7 +35,7 @@
     "sinon": "^9.2.2",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.7",
-    "vestibule-common-layer": "file:../../layers/common/layer-dist/dist/vestibule-common-layer-1.0.0.tgz",
+    "vestibule-common-layer": "file:../../layers/common/layer-dist/dist/vestibule-common-layer-1.0.1.tgz",
     "vestibule-alexa-layer": "file:../../layers/alexa/layer-dist/dist/vestibule-alexa-layer-1.0.2.tgz"
   },
   "dependencies": {}

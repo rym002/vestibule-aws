@@ -72,7 +72,7 @@ describe('Discovery', function () {
     })
     it('should return empty endpoints on error', async function () {
         const key = await getSharedKey();
-        const token = await generateToken(key, 'invalidClientId', authenticationProps.testClientIds[0], new Date(Date.now() + 5000), authenticationProps.testPoolId, authenticationProps.testRegionId);
+        const token = await generateToken(key, 'invalidClientId', authenticationProps.cognito_client_ids, new Date(Date.now() + 5000), authenticationProps.cognito_url);
         const ret = await handler(<Directive.Message>{
             directive: {
                 header: {

@@ -1,6 +1,5 @@
 import axios from 'axios';
 import { JWK, JWS } from 'node-jose';
-import { getParameters } from './config';
 
 interface TokenPayload {
     auth_time: number
@@ -25,26 +24,38 @@ interface UserInfo {
     picture: string
 }
 
-interface CognitoParameters {
-    clientIds: string[]
-    poolId: string
-    region: string
-}
-
 const myAxios = axios.create();
 
 let keystore: JWK.KeyStore | undefined;
+let clientIds: string[] | undefined
 
-async function getCognitoParameters(): Promise<CognitoParameters> {
-    return await getParameters<CognitoParameters>('cognito');
+function getCognitoUrl() {
+    const COGNITO_URL = process.env['cognito_url']
+    if (!COGNITO_URL) {
+        throw new Error('COGNITO_URL not set')
+    }
+    return COGNITO_URL
+}
+
+function getJwksUrl() {
+    return getCognitoUrl() + '/.well-known/jwks.json'
+}
+function getClientIds() {
+    if (clientIds === undefined) {
+        const COGNITO_CLIENT_IDS = process.env['cognito_client_ids']
+        if (COGNITO_CLIENT_IDS) {
+            clientIds = COGNITO_CLIENT_IDS.split(',')
+        } else {
+            throw new Error('COGNITO_CLIENT_IDS not set')
+        }
+    }
+    return clientIds
 }
 async function getKeyStore(): Promise<JWK.KeyStore> {
     if (!keystore) {
         try {
             console.time('getKeyStore');
-            const parameters = await getCognitoParameters();
-            const cognitoUrl = 'https://cognito-idp.' + parameters.region + '.amazonaws.com/' + parameters.poolId + '/.well-known/jwks.json';
-            const cognitoResp = await myAxios.get<JWK.RawKey>(cognitoUrl);
+            const cognitoResp = await myAxios.get<JWK.RawKey>(getJwksUrl());
             const keys = cognitoResp.data;
             keystore = await JWK.asKeyStore(keys);
         } finally {
@@ -73,13 +84,11 @@ async function lookupClaims(token: string) {
 }
 
 async function verifyClaims(claims: TokenPayload) {
-    const parameters = await getCognitoParameters();
-    const poolIndex = claims.iss.indexOf(parameters.poolId);
-    const lastSlash = claims.iss.lastIndexOf('/');
-    if (poolIndex != (lastSlash + 1)) {
-        throw new Error('Invalid Pool Id');
+    if (claims.iss !== getCognitoUrl()) {
+        throw new Error('Token was not issued by a trusted issuer');
     }
-    const clientIndex = parameters.clientIds.indexOf(claims.client_id);
+    const clientIds = getClientIds()
+    const clientIndex = clientIds.indexOf(claims.client_id);
     if (clientIndex < 0) {
         throw new Error('Token was not issued for this audience');
     }

@@ -2,9 +2,7 @@ import { Message } from '@vestibule-link/alexa-video-skill-types';
 import { expect, use } from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import 'mocha';
-import { getCognitoTestParameters, setupCognitoMock } from '../../../mocks/CognitoMock';
-import { getContextSandbox } from '../../../mocks/Sandbox';
-import { ssmMock } from '../../../mocks/SSMMocks';
+import { setupCognitoMock } from '../../../mocks/CognitoMock';
 import { getSub } from '../src/authentication';
 import { generateValidScope } from './directive/TestHelper';
 
@@ -14,8 +12,6 @@ describe('Authentication', function () {
     const clientId = 'Authentication'
     describe('BearerToken', function () {
         beforeEach(async function () {
-            const sandbox = getContextSandbox(this)
-            ssmMock(sandbox, [getCognitoTestParameters]);
             await setupCognitoMock();
         })
         it('should return the sub for a valid token', async function () {
