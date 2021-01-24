@@ -62,6 +62,7 @@ Resources:
           endpoint_table: !Select [1, !Split [ "/", !GetAtt EndpointTable.Arn]]
           cognito_url: !GetAtt CognitoUserPool.ProviderURL
           cognito_client_ids: !Ref AlexaUserPoolClient
+          parameter_label: 'alexa-gateway'
   AlexaChangeReportEvent:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -82,6 +83,7 @@ Resources:
           endpoint_table: !Select [1, !Split [ "/", !GetAtt EndpointTable.Arn]]
           cognito_url: !GetAtt CognitoUserPool.ProviderURL
           cognito_client_ids: !Ref AlexaUserPoolClient
+          parameter_label: 'alexa-change-report'
   CommonLayer:
     Type: 'AWS::Serverless::LayerVersion'
     Properties:
