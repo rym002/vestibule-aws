@@ -463,6 +463,7 @@ Resources:
       CallbackURLs: !Ref CallbackUrls
       SupportedIdentityProviders:
         - !Ref LWAIdentityProvider
+      AllowedOAuthFlowsUserPoolClient: true
       AllowedOAuthFlows:
         - code
       AllowedOAuthScopes:
