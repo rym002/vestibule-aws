@@ -35,7 +35,7 @@
     "ts-node": "^8.10.2",
     "typescript": "^3.9.7",
     "vestibule-alexa-layer": "file:../../layers/alexa/layer-dist/dist/vestibule-alexa-layer-1.0.2.tgz",
-    "vestibule-common-layer": "file:../../layers/common/layer-dist/dist/vestibule-common-layer-1.0.2.tgz"
+    "vestibule-common-layer": "file:../../layers/common/layer-dist/dist/vestibule-common-layer-1.0.3.tgz"
   },
   "dependencies": {
     "@vestibule-link/iot-types": "^3.1.1",
