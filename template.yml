@@ -31,6 +31,12 @@ Parameters:
   LWAClientSecret:
     Description: Client secret for LWA
     Type: AWS::SSM::Parameter::Value<String>
+  GoogleClientId:
+    Description: Client Id for Google
+    Type: AWS::SSM::Parameter::Value<String>
+  GoogleClientSecret:
+    Description: Client secret for Google
+    Type: AWS::SSM::Parameter::Value<String>
 Outputs:
   AlexaGatewayId:
     Description: ID of the AlexaGateway
@@ -463,6 +469,7 @@ Resources:
       CallbackURLs: !Ref CallbackUrls
       SupportedIdentityProviders:
         - !Ref LWAIdentityProvider
+        - !Ref GoogleIdentityProvider
       AllowedOAuthFlowsUserPoolClient: true
       AllowedOAuthFlows:
         - code
@@ -493,3 +500,13 @@ Resources:
         client_id: !Ref LWAClientId
         client_secret: !Ref LWAClientSecret
         authorize_scopes: profile:user_id
+  GoogleIdentityProvider:
+    Type: AWS::Cognito::UserPoolIdentityProvider
+    Properties:
+      UserPoolId: !Ref CognitoUserPool
+      ProviderName: Google
+      ProviderType: Google
+      ProviderDetails:
+        client_id: !Ref GoogleClientId
+        client_secret: !Ref GoogleClientSecret
+        authorize_scopes: openid
