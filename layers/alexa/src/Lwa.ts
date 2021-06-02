@@ -191,6 +191,7 @@ class TokenManager {
             const resp = await lwaAxios.post<DeviceTokenResponse>(LWA_URI, postBody)
             return resp.data;
         } catch (e) {
+            console.log("Error: %j : Request: %j", e, request)
             throw new Error(e.response.data.error_description)
         } finally {
             console.timeEnd('lwaToken')
