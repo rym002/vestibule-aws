@@ -7,3 +7,4 @@ deploy
 packaged.yml
 artifacts.zip
 package-lock.json
+layer-dist

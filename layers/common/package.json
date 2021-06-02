@@ -4,14 +4,19 @@
   "description": "Vestible Lambda common layer",
   "main": "dist/index.js",
   "config": {
-    "layer": "./layer-dist/dist"
+    "layer": {
+      "root": "./layer-dist",
+      "dist": "./layer-dist/dist"
+    }
   },
   "scripts": {
-    "clean": "rimraf dist && rimraf deploy && rimraf $npm_package_config_layer",
+    "clean": "rimraf dist && rimraf deploy && rimraf $npm_package_config_layer_root",
     "build": "tsc",
     "prepack": "npm run build",
     "pretest": "npm run clean",
-    "postpack": "mkdirp $npm_package_config_layer && move-file $npm_package_name-$npm_package_version.tgz $npm_package_config_layer/$npm_package_name-$npm_package_version.tgz",
+    "layer-package": "mkdirp $npm_package_config_layer_dist && move-file $npm_package_name-$npm_package_version.tgz $npm_package_config_layer_dist/$npm_package_name-$npm_package_version.tgz",
+    "layer-build": "cd $npm_package_config_layer_root && npm init --yes && npm install ./dist/$npm_package_name-$npm_package_version.tgz --production",
+    "postpack": "npm run layer-package && npm run layer-build",
     "test": "mocha"
   },
   "keywords": [],
@@ -26,7 +31,6 @@
     "@types/chai-as-promised": "^7.1.4",
     "@types/lodash": "^4.14.170",
     "@types/mocha": "^8.2.2",
-    "@types/nock": "^11.1.0",
     "@types/node-jose": "^1.1.6",
     "@types/sinon": "^9.0.11",
     "aws-sdk": "^2.919.0",
