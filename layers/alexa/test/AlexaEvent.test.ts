@@ -29,7 +29,7 @@ describe('AlexaEvent', function () {
         ssmMock(sandbox, [getAlexaTestParameters])
     })
 
-    function mockAlexaGateway(request: Event.Message, token: string, responseCode: number, body: nock.ReplyBody) {
+    function mockAlexaGateway(request: Event.Message & nock.DataMatcherMap, token: string, responseCode: number, body: nock.ReplyBody) {
         return nock('http://gateway/event')
             .post('/test', request)
             .matchHeader('Content-Type', 'application/json')
@@ -38,7 +38,7 @@ describe('AlexaEvent', function () {
 
     }
 
-    const testEvent: Event.Message = {
+    const testEvent: Event.Message & nock.DataMatcherMap = {
         event: {
             header: {
                 namespace: 'Alexa.WakeOnLANController',

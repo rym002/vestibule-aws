@@ -55,13 +55,13 @@ describe('Lwa', function () {
         }
     }
 
-    function createRefreshTokenRequest(refresh_token: string): RefreshTokenRequest {
+    function createRefreshTokenRequest(refresh_token: string): RefreshTokenRequest & nock.DataMatcherMap {
         return {
             ...createBaseToken('refresh_token'),
             refresh_token: refresh_token
         }
     }
-    function mockLwa(token: GrantRequest | RefreshTokenRequest, responseCode: number, body: nock.ReplyBody) {
+    function mockLwa(token: GrantRequest & nock.DataMatcherMap| RefreshTokenRequest & nock.DataMatcherMap, responseCode: number, body: nock.ReplyBody) {
         return nock('https://api.amazon.com/auth')
             .post('/o2/token', token)
             .matchHeader('Content-Type', 'application/x-www-form-urlencoded')

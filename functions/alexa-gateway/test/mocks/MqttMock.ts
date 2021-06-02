@@ -8,11 +8,11 @@ export interface MockMqttOperations {
 
 class MockMqtt implements MockMqttOperations {
     constructor(readonly topic: string,
-        readonly on_message: (topic: string, payload: ArrayBuffer) => void) {
+        readonly on_message: (topic: string, payload: ArrayBuffer, dup: boolean, qos: mqtt.QoS, retain: boolean) => void) {
     }
     sendMessage(topic: string, payload: any) {
         process.nextTick(() => {
-            this.on_message(topic, encoder.encode(JSON.stringify(payload)));
+            this.on_message(topic, encoder.encode(JSON.stringify(payload)),false,mqtt.QoS.AtMostOnce,false);
         })
     }
 }
