@@ -37,7 +37,7 @@ async function loadAllParameters(parameterPath: string, nextToken?: string): Pro
 
 async function loadParameters() {
     try {
-        console.timeEnd('loadParameters');
+        console.time('loadParameters');
         const parameterPath = '/vestibule/' + VESTIBULE_ENV;
         const parameters = await loadAllParameters(parameterPath)
         parameters.forEach(parameter => {
