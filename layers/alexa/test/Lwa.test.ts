@@ -9,7 +9,7 @@ import { mockAwsWithSpy } from '../../../mocks/AwsMock';
 import { tokenManager } from '../src';
 import { DeviceTokenResponse, GrantRequest, GrantTypes, RefreshTokenRequest } from '../src/Lwa';
 import nock = require('nock');
-import { ssmMock} from '../../../mocks/SSMMocks';
+import { ssmMock } from '../../../mocks/SSMMocks';
 use(chaiAsPromised);
 
 const lwaParameters = {
@@ -61,7 +61,7 @@ describe('Lwa', function () {
             refresh_token: refresh_token
         }
     }
-    function mockLwa(token: GrantRequest & nock.DataMatcherMap| RefreshTokenRequest & nock.DataMatcherMap, responseCode: number, body: nock.ReplyBody) {
+    function mockLwa(token: GrantRequest & nock.DataMatcherMap | RefreshTokenRequest & nock.DataMatcherMap, responseCode: number, body: nock.ReplyBody) {
         return nock('https://api.amazon.com/auth')
             .post('/o2/token', token)
             .matchHeader('Content-Type', 'application/x-www-form-urlencoded')
@@ -107,8 +107,36 @@ describe('Lwa', function () {
                 ]
             }
         })
-        mockAwsWithSpy<DynamoDB.Types.BatchWriteItemInput, DynamoDB.Types.BatchWriteItemOutput>(sandbox, 'DynamoDB', 'batchWriteItem', (req) => {
-            if (dynamoMatcher(req)) {
+
+        const dynamoDeleteMatcher = matches(<DynamoDB.Types.BatchWriteItemInput>{
+            RequestItems: {
+                vestibule_auth_tokens: [
+                    {
+                        DeleteRequest: {
+                            Key: {
+                                user_id: {
+                                    S: clientId + 'refresh'
+                                },
+                            }
+                        }
+                    }
+                ],
+                vestibule_refresh_tokens: [
+                    {
+                        DeleteRequest: {
+                            Key: {
+                                user_id: {
+                                    S: clientId + 'refresh'
+                                },
+                            }
+                        }
+                    }
+                ]
+            }
+        })
+
+        this.currentTest!['batchWriteItemMock'] = mockAwsWithSpy<DynamoDB.Types.BatchWriteItemInput, DynamoDB.Types.BatchWriteItemOutput>(sandbox, 'DynamoDB', 'batchWriteItem', (req) => {
+            if (dynamoMatcher(req) || dynamoDeleteMatcher(req)) {
                 return {
 
                 }
@@ -167,13 +195,16 @@ describe('Lwa', function () {
                 .and.eventually.has.property('message', 'Cannot find refresh token')
         })
 
-        it('should fail on lwa error', async function () {
+        it('should fail and delete existing token on lwa error', async function () {
             const grantRequest = createRefreshTokenRequest(successResponse.refresh_token)
-            mockLwa(grantRequest, 401, {
+            mockLwa(grantRequest, 400, {
+                error: "invalid_grant",
                 error_description: 'Failed'
             })
+            const sandbox = getContextSandbox(this);
             await expect(tokenManager.getToken(clientId + 'refresh')).to.rejected
-                .and.eventually.has.property('message', 'Failed')
+                .and.eventually.has.property('error_description', 'Failed')
+            sandbox.assert.calledOnce(this.test!['batchWriteItemMock'])
         })
     })
 })

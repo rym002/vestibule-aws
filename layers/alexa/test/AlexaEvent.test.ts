@@ -81,7 +81,6 @@ describe('AlexaEvent', function () {
             .and.to.be.eventually.have.property('message', errorResponse.payload.message)
 
         sandbox.assert.called(dynamoBatchWriteSpy);
-        AWSMock.restore('DynamoDB', 'batchWriteItem');
     })
     it('should throw exception on alexa error', async function () {
         const errorResponse: EventGateway.AlexaErrorResponse = {

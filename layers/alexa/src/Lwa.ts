@@ -22,7 +22,8 @@ type ErrorCodeType = 'invalid_request'
     | 'unsupported_response_type'
     | 'invalid_scope'
     | 'server_error'
-    | 'temporarily_unavailable';
+    | 'temporarily_unavailable'
+    | 'invalid_grant'
 
 
 const lwaAxios = axios.create({
@@ -118,16 +119,26 @@ class TokenManager {
                     ...await this.createTokenRequest('refresh_token'),
                     ... { refresh_token: refreshToken }
                 }
-                const response = await this.requestAccessToken(request);
-                await this.saveAccessToken(response, userSub);
-                return response.access_token;
+                try {
+                    const response = await this.requestAccessToken(request);
+                    await this.saveAccessToken(response, userSub);
+                    return response.access_token;
+                } catch (err) {
+                    switch ((<ErrorResponse>err).error) {
+                        case 'invalid_grant': {
+                            // TODO: need to possibly deisable access to Iot
+                            await this.deleteClientTokens(userSub)
+                        }
+                    }
+                    throw err
+                }
             }
         }
         throw new Error('Cannot find refresh token');
     }
     async deleteClientTokens(clientId: string): Promise<void> {
         const tokenKey = this.getTokenKey(clientId);
-        console.time('deleteToken')
+        console.time('deleteToken ' + clientId)
         try {
             await this.db.batchWriteItem({
                 RequestItems: {
@@ -149,7 +160,7 @@ class TokenManager {
             }).promise();
 
         } finally {
-            console.timeEnd('deleteToken')
+            console.timeEnd('deleteToken ' + clientId)
         }
     }
     private async updateTokens(tokenResponse: DeviceTokenResponse, clientId: string): Promise<void> {
@@ -191,8 +202,9 @@ class TokenManager {
             const resp = await lwaAxios.post<DeviceTokenResponse>(LWA_URI, postBody)
             return resp.data;
         } catch (e) {
-            console.log("Error: %j : Request: %j", e, request)
-            throw new Error(e.response.data.error_description)
+            const response: ErrorResponse = e.response.data
+            console.log("Response: %j : Request: %j", response, request)
+            throw response
         } finally {
             console.timeEnd('lwaToken')
         }
