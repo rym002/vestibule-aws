@@ -61,20 +61,14 @@ export interface DeviceTokenResponse {
 }
 
 interface TokenKey {
-    [key: string]: DynamoDB.AttributeValue
-    user_id: {
-        S: DynamoDB.StringAttributeValue
-    }
+    [key: string]: string | number
+    user_id: string
 }
 interface TokenRecord extends TokenKey {
-    token: {
-        S: DynamoDB.StringAttributeValue
-    }
+    token: string
 }
 interface TTLTokenRecord extends TokenRecord {
-    ttl: {
-        N: DynamoDB.NumberAttributeValue
-    }
+    ttl: number
 }
 const AUTH_TOKEN_TABLE = process.env['auth_token_table'] || 'vestibule_auth_tokens';
 const REFRESH_TOKEN_TABLE = process.env['refresh_token_table'] || 'vestibule_refresh_tokens';
@@ -87,7 +81,7 @@ class TokenManager {
         }
         return this._db;
     }
-    private async getAuthToken(tokenKey: TokenKey, tableName: string): Promise<string | undefined> {
+    private async getAuthToken(tokenKey: DynamoDB.AttributeMap, tableName: string): Promise<string | undefined> {
         const logType = 'dynamoDb-' + tableName;
         console.time(logType);
         const authTokenRecord = await this.db.getItem({
@@ -95,16 +89,17 @@ class TokenManager {
             Key: tokenKey
         }).promise();
         console.timeEnd(logType);
-        if (authTokenRecord.Item && authTokenRecord.Item.token.S) {
-            return authTokenRecord.Item.token.S;
+        if (authTokenRecord.Item) {
+            const record = DynamoDB.Converter.unmarshall(authTokenRecord.Item, {
+                convertEmptyValues: true
+            })
+            return record.token;
         }
     }
-    private getTokenKey(userSub: string): TokenKey {
-        return {
-            user_id: {
-                S: userSub
-            }
-        }
+    private getTokenKey(userSub: string): DynamoDB.AttributeMap {
+        return DynamoDB.Converter.marshall({
+            user_id: userSub
+        })
     }
     async getToken(userSub: string): Promise<string> {
         const tokenKey = this.getTokenKey(userSub);
@@ -126,7 +121,7 @@ class TokenManager {
                 } catch (err) {
                     switch ((<ErrorResponse>err).error) {
                         case 'invalid_grant': {
-                            // TODO: need to possibly deisable access to Iot
+                            // TODO: need to possibly disable access to Iot
                             await this.deleteClientTokens(userSub)
                         }
                     }
@@ -164,8 +159,8 @@ class TokenManager {
         }
     }
     private async updateTokens(tokenResponse: DeviceTokenResponse, clientId: string): Promise<void> {
-        const refreshToken: TokenRecord = this.convertToRefreshToken(tokenResponse, clientId);
-        const accessToken: TokenRecord = this.convertToAccessToken(tokenResponse, clientId);
+        const refreshToken = this.convertToRefreshToken(tokenResponse, clientId);
+        const accessToken = this.convertToAccessToken(tokenResponse, clientId);
         console.time('updateTokens')
         const dbWrite = await this.db.batchWriteItem({
             RequestItems: {
@@ -215,32 +210,22 @@ class TokenManager {
         await this.updateTokens(resp, clientId);
         return resp;
     }
-    private convertToRefreshToken(tokenResponse: DeviceTokenResponse, clientId: string): TokenRecord {
-        return {
-            user_id: {
-                S: clientId
-            },
-            token: {
-                S: tokenResponse.refresh_token
-            }
-        };
+    private convertToRefreshToken(tokenResponse: DeviceTokenResponse, clientId: string): DynamoDB.AttributeMap {
+        return DynamoDB.Converter.marshall({
+            user_id: clientId,
+            token: tokenResponse.refresh_token
+        })
     }
-    private convertToAccessToken(tokenResponse: DeviceTokenResponse, clientId: string): TTLTokenRecord {
-        return {
-            user_id: {
-                S: clientId
-            },
-            token: {
-                S: tokenResponse.access_token
-            },
-            ttl: {
-                N: (Math.floor(Date.now() / 1000) + tokenResponse.expires_in) + ''
-            }
-        }
+    private convertToAccessToken(tokenResponse: DeviceTokenResponse, clientId: string): DynamoDB.AttributeMap {
+        return DynamoDB.Converter.marshall({
+            user_id: clientId,
+            token: tokenResponse.access_token,
+            ttl: (Math.floor(Date.now() / 1000) + tokenResponse.expires_in)
+        })
     }
 
     private async saveAccessToken(tokenResponse: DeviceTokenResponse, clientId: string): Promise<void> {
-        const accessToken: TokenRecord = this.convertToAccessToken(tokenResponse, clientId);
+        const accessToken = this.convertToAccessToken(tokenResponse, clientId);
         await this.db.putItem({
             TableName: AUTH_TOKEN_TABLE,
             Item: accessToken

@@ -10,6 +10,7 @@ import { tokenManager } from '../src';
 import { DeviceTokenResponse, GrantRequest, GrantTypes, RefreshTokenRequest } from '../src/Lwa';
 import nock = require('nock');
 import { ssmMock } from '../../../mocks/SSMMocks';
+import { String } from 'aws-sdk/clients/cloudhsm';
 use(chaiAsPromised);
 
 const lwaParameters = {
@@ -148,21 +149,24 @@ describe('Lwa', function () {
     context('getToken', function () {
         function mockGetItem(sandbox: SinonSandbox) {
             return mockAwsWithSpy<DynamoDB.Types.GetItemInput, DynamoDB.Types.GetItemOutput>(sandbox, 'DynamoDB', 'getItem', (req) => {
-                let retId;
+                let retId: string | undefined;
                 if (req.Key.user_id.S == clientId + 'auth' && req.TableName == 'vestibule_auth_tokens') {
                     retId = successResponse.access_token;
                 } else if (req.Key.user_id.S == clientId + 'refresh' && req.TableName == 'vestibule_refresh_tokens') {
                     retId = successResponse.refresh_token
                 }
-                return {
-                    Item: {
-                        token: {
-                            S: retId
+                if (retId) {
+                    return {
+                        Item: {
+                            token: {
+                                S: retId
+                            }
                         }
                     }
                 }
+                return {
+                }
             })
-
         }
 
         function mockPutItem(sandbox: SinonSandbox) {
